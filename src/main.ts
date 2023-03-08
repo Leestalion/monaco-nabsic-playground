@@ -62,14 +62,12 @@ monaco.languages.registerCompletionItemProvider('nsharp', {
       kind: monaco.languages.CompletionItemKind.Method,
       insertText: prevWord.word + "!chewbacca",
       range: range,
-      command: { id: 'editor.action.insertLineAfter', title: "" }
     });
     suggestions.push({
       label: "yoda",
       kind: monaco.languages.CompletionItemKind.Method,
       insertText: prevWord.word + "!yoda",
       range: range,
-      command: { id: 'editor.action.insertLineAfter', title: "" }
     });
     return { suggestions };
   }
