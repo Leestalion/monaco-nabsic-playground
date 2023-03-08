@@ -1,10 +1,61 @@
-
-#app {
-  width: 100vw;
-  height: 100vh;
-}
-
 body {
-  height: 100vh;
+  color: #a4abb8;
+  background-color: #282c34;
+  padding: 0;
   margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+button {
+  border: 1px solid black;
+  border-radius: 2px;
+  padding: 1ch;
+  color: #a4abb8;
+  background-color: #353b46;
+}
+button:hover {
+  background-color: #454c59;
+}
+button:active {
+  background-color: #1f2228;
+}
+.hbox {
+  display: flex;
+  align-items: center;
+}
+.vbox {
+  display: flex;
+  flex-direction: column;
+}
+.align-top {
+  align-items: flex-start;
+}
+#editor {
+  top: 0;
+  min-height: 100ch;
+  min-width: 50%;
+  margin: 0;
+}
+#out {
+  background-color: black;
+  color: white;
+}
+#errors {
+  background-color: black;
+  color: red;
+}
+.grow {
+  flex-grow: 1;
+}
+.padsides {
+  padding-left: 2ch;
+  padding-right: 2ch;
+}
+.padbottom {
+  padding-bottom: 2ch;
+}
+.border-bottom {
+  border-bottom: 1px solid black;
+}
+.hidden {
+  display: none;
 }

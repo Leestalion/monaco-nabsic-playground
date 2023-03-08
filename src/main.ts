@@ -19,6 +19,9 @@ monaco.languages.register({
 monaco.languages.setMonarchTokensProvider('nsharp', {
   ignoreCase: true,
   keywords: ["dim", "class", "public", "private", "if", "case", "for", "foreach", "while", "break", "continue"],
+  typeKeywords: [
+    'boolean', 'number', 'string', 'dictionary', 'cache', 'form', 'recordset', 'tuple', 'array'
+  ],
   builtins: ["debugprint"],
   tokenizer: {
     root: [
@@ -38,7 +41,8 @@ monaco.languages.setMonarchTokensProvider('nsharp', {
   }
 });
 
-monaco.editor.create(document.querySelector<HTMLDivElement>('#app')!, {
+monaco.editor.create(document.querySelector<HTMLDivElement>('#editor')!, {
+  theme: "vs-dark",
   value: `Dim factorial@ := (n@ Number+) => (
     Dim fac@ := 1:
     For(n@,
