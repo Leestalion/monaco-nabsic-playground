@@ -42,6 +42,7 @@ monaco.languages.setMonarchTokensProvider('nsharp', {
 });
 
 monaco.editor.create(document.querySelector<HTMLDivElement>('#editor')!, {
+  wordSeparators: `~!#$%^&*()-=+[{]}\|;:'",.<>/?`,
   theme: "vs-dark",
   value: `Dim factorial@ := (n@ Number+) => (
     Dim fac@ := 1:
