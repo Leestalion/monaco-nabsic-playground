@@ -1,8 +1,33 @@
 import './style.css';
 import { monaco } from './mona/customMonaco';
-
-const configPath = monaco.Uri.parse("./language-configuration.json");
-
+ 
+const langConfig: monaco.languages.LanguageConfiguration = {
+  wordPattern: /(-?\d*\.\d\w*@?#?%?)|([^\`\~\!\^\&\*\(\)\-\=\+\[\{\]\}\\\|\;\:\'\"\,\.\<\>\/\?\s]+)/g,
+  "comments": {
+      // symbol used for single line comment. Remove this entry if your language does not support line comments
+      "lineComment": "'"
+  },
+  // symbols used as brackets
+  "brackets": [
+      ["{", "}"],
+      ["[", "]"],
+      ["(", ")"]
+  ],
+  // symbols that are auto closed when typing
+  "autoClosingPairs": [
+		{ open: '{', close: '}' },
+		{ open: '[', close: ']' },
+		{ open: '(', close: ')' },
+		{ open: '"', close: '"', notIn: ['string'] },
+  ],
+  // symbols that can be used to surround a selection
+  "surroundingPairs": [
+		{ open: '{', close: '}' },
+		{ open: '[', close: ']' },
+		{ open: '(', close: ')' },
+		{ open: '"', close: '"' },
+  ]
+};
 
 monaco.languages.register({ 
   id: 'nsharp',
@@ -13,7 +38,41 @@ monaco.languages.register({
   extensions: [
     "nab"
   ],
-  configuration: configPath
+});
+
+monaco.languages.setLanguageConfiguration('nsharp', langConfig);
+
+monaco.languages.registerCompletionItemProvider('nsharp', {
+  triggerCharacters: ['.'],
+  provideCompletionItems(model, position, context, token) {
+    if (context.triggerCharacter !== '.') {
+      return { suggestions: [] };
+    }
+    const word = model.getWordUntilPosition(position);
+    const prevWord = model.getWordUntilPosition({ lineNumber: position.lineNumber, column: position.column - 1 });
+    const range = {
+      startLineNumber: position.lineNumber,
+      endLineNumber: position.lineNumber,
+      startColumn: word.startColumn,
+      endColumn: word.endColumn
+    }
+    const suggestions: monaco.languages.CompletionItem[] = [];
+    suggestions.push({
+      label: "chewbacca",
+      kind: monaco.languages.CompletionItemKind.Method,
+      insertText: prevWord.word + "!chewbacca",
+      range: range,
+      command: { id: 'editor.action.insertLineAfter', title: "" }
+    });
+    suggestions.push({
+      label: "yoda",
+      kind: monaco.languages.CompletionItemKind.Method,
+      insertText: prevWord.word + "!yoda",
+      range: range,
+      command: { id: 'editor.action.insertLineAfter', title: "" }
+    });
+    return { suggestions };
+  }
 });
 
 monaco.languages.setMonarchTokensProvider('nsharp', {
