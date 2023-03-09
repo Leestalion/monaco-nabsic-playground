@@ -100,8 +100,6 @@ monaco.languages.registerCompletionItemProvider('nsharp', {
   }
 });
 
-
-
 const urlParams = new URLSearchParams(window.location.search);
 const value = urlParams.get("code") ?? `Dim factorial@ := (n@ Number+) => (
   Dim fac@ := 1:
