@@ -101,7 +101,7 @@ monaco.languages.setMonarchTokensProvider('nsharp', {
 
 const editor = monaco.editor.create(document.querySelector<HTMLDivElement>('#editor')!, {
   wordSeparators: `~!^&*()-=+[{]}\|;:'",.<>/?`,
-  theme: "vs-dark",
+  theme: "vs",
   value: `Dim factorial@ := (n@ Number+) => (
     Dim fac@ := 1:
     For(n@,
@@ -152,6 +152,21 @@ function exec() {
           err.value = e;
         }
     }
+}
+
+function switchCurrentTheme(e:any) {
+  if (e.target.checked != null) {
+    if (e.target.checked) {
+      monaco.editor.setTheme('vs-dark');
+    } else {
+      monaco.editor.setTheme('vs');
+    }
+  }
+}
+
+const themeSwitch = document.querySelector<HTMLLabelElement>('.switch');
+if (themeSwitch != null) {
+  themeSwitch.addEventListener('click', (e:Event) => switchCurrentTheme(e));
 }
 
 async function run() {
