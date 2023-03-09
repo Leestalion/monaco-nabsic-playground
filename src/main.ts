@@ -76,20 +76,21 @@ monaco.languages.registerCompletionItemProvider('nsharp', {
 
 monaco.languages.setMonarchTokensProvider('nsharp', {
   ignoreCase: true,
-  keywords: ["dim", "class", "public", "private", "if", "case", "for", "foreach", "while", "break", "continue"],
+  keywords: ["dim", "new", "as", "class", "public", "private", "if", "case", "for", "foreach", "while", "break", "continue"],
   typeKeywords: [
     'boolean', 'number', 'string', 'dictionary', 'cache', 'form', 'recordset', 'tuple', 'array'
   ],
   builtins: ["debugprint"],
   tokenizer: {
     root: [
-      [/[a-z][\w]*#/, 'constant'],
+      [/[a-z][\w]*[#%]/, 'constant'],
       [/([+\-*\/\^&:]:=|=|<|<=|>|>=|=>)/, 'operators'],
-      [ /[a-z][\w]*[@$%]?/, {
+      [/[a-z][\w]*[@$%]/, 'identifier'],
+      [ /[a-z][\w]*/, {
         cases: {
           '@keywords': 'keyword',
-          '@default': 'variable',
-          '@builtins': 'predefined',
+          '@builtins': 'variable.other',
+          '@default': 'variable.other',
         }
       } ],
       [/[0-9]+[.]?[0-9]*/, 'number.float'],
