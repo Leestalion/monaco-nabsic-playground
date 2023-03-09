@@ -39,8 +39,8 @@ button:active {
   background-color: black;
   color: white;
 }
-#canvas {
-  background-color: black;
+#doc {
+  background-color: initial;
 }
 #errors {
   background-color: black;

@@ -444,15 +444,6 @@
 
     /* Fun API for programming visual things */
 
-    function componentToHex(c) {
-        var hex = c.toString(16);
-        return hex.length == 1 ? "0" + hex : hex;
-    }
-
-    function colorToHex(c) {
-        return "#" + componentToHex(c._r) + componentToHex(c._g) + componentToHex(c._b);
-    }
-
     $nab.BuiltIn.color = class Color {
         #r; #g; #b;
         constructor(r, g, b) {
@@ -466,8 +457,17 @@
         g() { return this.#g; }
         b() { return this.#b; }
 
+        #componentToHex(c) {
+            var hex = c.toString(16);
+            return hex.length == 1 ? "0" + hex : hex;
+        }
+    
+        #colorToHex(c) {
+            return "#" + this.#componentToHex(c.#r) + this.#componentToHex(c.#g) + this.#componentToHex(c.#b);
+        }
+
         tohex() {
-            return new $nab.BuiltIn.string(colorToHex(this));
+            return new $nab.BuiltIn.string(this.#colorToHex(this));
         }
     };
 

@@ -122,13 +122,13 @@ ForEach(results@,
 
 const editor = monaco.editor.create(document.querySelector<HTMLDivElement>('#editor')!, {
     wordSeparators: `~!^&*()-=+[{]}\|;:'",.<>/?`,
-    theme: "vs",
+    theme: window.localStorage.getItem("theme") ?? "vs",
     value,
     language: 'nsharp',
 });
 
 const out = document.getElementById("out") as HTMLTextAreaElement;
-const canvas = document.getElementById("canvas") as HTMLCanvasElement;
+const doc = document.getElementById("doc") as HTMLDivElement;
 const err = document.getElementById("errors") as HTMLTextAreaElement;
 const errConsole = document.getElementById("err-console") as HTMLTextAreaElement;
 const execBtn = document.getElementById("exec-btn") as HTMLButtonElement;
@@ -138,7 +138,7 @@ const closeErrBtn = document.getElementById("close-errors") as HTMLButtonElement
 const darkModeText = document.querySelector<HTMLLabelElement>('.dark-mode-text');
 const themeSwitch = document.querySelector<HTMLLabelElement>('.switch');
 if (themeSwitch != null && darkModeText != null) {
-    themeSwitch.addEventListener('click', (e: Event) => switchCurrentTheme(e, darkModeText));
+    themeSwitch.addEventListener('click', (e: Event) => switchCurrentTheme(e));
 }
 
 const graphicsSwitch = document.querySelector<HTMLLabelElement>('#graphics-switcher');
@@ -146,27 +146,39 @@ if (graphicsSwitch != null) {
     graphicsSwitch.addEventListener('click', (e: Event) => switchGraphicsMode(e));
 }
 
-function switchCurrentTheme(e: any, darkModeText: HTMLLabelElement) {
+if (window.localStorage.getItem('graphics-mode') === 'canvas') {
+    setGraphicsMode(true);
+}
+
+function switchCurrentTheme(e: any) {
     if (e.target.checked != null) {
         if (e.target.checked) {
             monaco.editor.setTheme('vs-dark');
-            darkModeText.innerHTML = "Dark Mode";
+            window.localStorage.setItem('theme', 'vs-dark');
+            if (darkModeText) darkModeText.innerHTML = "Dark Mode";
         } else {
             monaco.editor.setTheme('vs');
-            darkModeText.innerHTML = "Light Mode";
+            window.localStorage.setItem('theme', 'vs');
+            if (darkModeText) darkModeText.innerHTML = "Light Mode";
         }
+    }
+}
+
+function setGraphicsMode(enable: boolean) {
+    if (enable) {
+        window.localStorage.setItem('graphics-mode', 'canvas');
+        out.classList.add("hidden");
+        doc.classList.remove("hidden");
+    } else {
+        window.localStorage.setItem('graphics-mode', 'console');
+        doc.classList.add("hidden");
+        out.classList.remove("hidden");
     }
 }
 
 function switchGraphicsMode(e: any) {
     if (e.target.checked != null) {
-        if (e.target.checked) {
-            out.classList.add("hidden");
-            canvas.classList.remove("hidden");
-        } else {
-            canvas.classList.add("hidden");
-            out.classList.remove("hidden");
-        }
+        setGraphicsMode(e.target.checked);
     }
 }
 
@@ -209,6 +221,7 @@ async function run() {
     });
     clearBtn.addEventListener("click", function () {
         out.value = "";
+        doc.innerHTML = "&nbsp;";
     });
 }
 run();
