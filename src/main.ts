@@ -76,21 +76,20 @@ monaco.languages.registerCompletionItemProvider('nsharp', {
 
 monaco.languages.setMonarchTokensProvider('nsharp', {
   ignoreCase: true,
-  keywords: ["dim", "new", "as", "class", "public", "private", "if", "case", "for", "foreach", "while", "break", "continue"],
+  keywords: ["dim", "class", "public", "private", "if", "case", "for", "foreach", "while", "break", "continue"],
   typeKeywords: [
     'boolean', 'number', 'string', 'dictionary', 'cache', 'form', 'recordset', 'tuple', 'array'
   ],
   builtins: ["debugprint"],
   tokenizer: {
     root: [
-      [/[a-z][\w]*[#%]/, 'constant'],
+      [/[a-z][\w]*#/, 'constant'],
       [/([+\-*\/\^&:]:=|=|<|<=|>|>=|=>)/, 'operators'],
-      [/[a-z][\w]*[@$%]/, 'identifier'],
-      [ /[a-z][\w]*/, {
+      [ /[a-z][\w]*[@$%]?/, {
         cases: {
           '@keywords': 'keyword',
-          '@builtins': 'variable.other',
-          '@default': 'variable.other',
+          '@default': 'variable',
+          '@builtins': 'predefined',
         }
       } ],
       [/[0-9]+[.]?[0-9]*/, 'number.float'],
@@ -124,6 +123,21 @@ ForEach(results@,
   language: 'nsharp',
 });
 
+function switchCurrentTheme(e:any) {
+  if (e.target.checked != null) {
+    if (e.target.checked) {
+      monaco.editor.setTheme('vs-dark');
+    } else {
+      monaco.editor.setTheme('vs');
+    }
+  }
+}
+
+const themeSwitch = document.querySelector<HTMLLabelElement>('.switch');
+if (themeSwitch != null) {
+  themeSwitch.addEventListener('click', (e:Event) => switchCurrentTheme(e));
+}
+
 const out = document.getElementById("out") as HTMLTextAreaElement;
 const err = document.getElementById("errors") as HTMLTextAreaElement;
 const errConsole = document.getElementById("err-console") as HTMLTextAreaElement;
@@ -153,21 +167,6 @@ function exec() {
           err.value = e;
         }
     }
-}
-
-function switchCurrentTheme(e:any) {
-  if (e.target.checked != null) {
-    if (e.target.checked) {
-      monaco.editor.setTheme('vs-dark');
-    } else {
-      monaco.editor.setTheme('vs');
-    }
-  }
-}
-
-const themeSwitch = document.querySelector<HTMLLabelElement>('.switch');
-if (themeSwitch != null) {
-  themeSwitch.addEventListener('click', (e:Event) => switchCurrentTheme(e));
 }
 
 async function run() {
