@@ -134,6 +134,8 @@ const errConsole = document.getElementById("err-console") as HTMLTextAreaElement
 const execBtn = document.getElementById("exec-btn") as HTMLButtonElement;
 const clearBtn = document.getElementById("clear") as HTMLButtonElement;
 const closeErrBtn = document.getElementById("close-errors") as HTMLButtonElement;
+const themeSwitchBtn = document.getElementById("theme-switch") as HTMLInputElement;
+const graphicsSwitchBtn = document.getElementById("graphic-switch") as HTMLInputElement;
 
 const darkModeText = document.querySelector<HTMLLabelElement>('.dark-mode-text');
 const themeSwitch = document.querySelector<HTMLLabelElement>('.switch');
@@ -148,21 +150,33 @@ if (graphicsSwitch != null) {
 
 if (window.localStorage.getItem('graphics-mode') === 'canvas') {
     setGraphicsMode(true);
+    graphicsSwitchBtn.checked = true;
+}
+
+if (window.localStorage.getItem('theme') === 'vs-dark') {
+    setSwitchCurrentTheme(true);
+    themeSwitchBtn.checked = true;
+}
+
+function setSwitchCurrentTheme(dark: boolean) {
+    if (dark) {
+        monaco.editor.setTheme('vs-dark');
+        window.localStorage.setItem('theme', 'vs-dark');
+        if (darkModeText) darkModeText.innerHTML = "Dark Mode&nbsp;";
+    } else {
+        monaco.editor.setTheme('vs');
+        window.localStorage.setItem('theme', 'vs');
+        if (darkModeText) darkModeText.innerHTML = "Light Mode&nbsp;";
+    }
 }
 
 function switchCurrentTheme(e: any) {
     if (e.target.checked != null) {
-        if (e.target.checked) {
-            monaco.editor.setTheme('vs-dark');
-            window.localStorage.setItem('theme', 'vs-dark');
-            if (darkModeText) darkModeText.innerHTML = "Dark Mode&nbsp;";
-        } else {
-            monaco.editor.setTheme('vs');
-            window.localStorage.setItem('theme', 'vs');
-            if (darkModeText) darkModeText.innerHTML = "Light Mode&nbsp;";
-        }
+        setSwitchCurrentTheme(e.target.checked);
     }
 }
+
+
 
 function setGraphicsMode(enable: boolean) {
     if (enable) {
