@@ -127,19 +127,21 @@ const editor = monaco.editor.create(document.querySelector<HTMLDivElement>('#edi
     language: 'nsharp',
 });
 
-function switchCurrentTheme(e: any) {
+function switchCurrentTheme(e: any, darkModeText: HTMLDivElement) {
     if (e.target.checked != null) {
         if (e.target.checked) {
             monaco.editor.setTheme('vs-dark');
+            darkModeText.innerHTML = "Dark Mode";
         } else {
             monaco.editor.setTheme('vs');
+            darkModeText.innerHTML = "Light Mode";
         }
     }
 }
-
+const darkModeText = document.querySelector<HTMLDivElement>('.dark-mode-text');
 const themeSwitch = document.querySelector<HTMLLabelElement>('.switch');
-if (themeSwitch != null) {
-    themeSwitch.addEventListener('click', (e: Event) => switchCurrentTheme(e));
+if (themeSwitch != null && darkModeText != null) {
+    themeSwitch.addEventListener('click', (e: Event) => switchCurrentTheme(e, darkModeText));
 }
 
 const out = document.getElementById("out") as HTMLTextAreaElement;
