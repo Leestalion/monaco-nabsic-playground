@@ -127,6 +127,24 @@ const editor = monaco.editor.create(document.querySelector<HTMLDivElement>('#edi
     language: 'nsharp',
 });
 
+const out = document.getElementById("out") as HTMLTextAreaElement;
+const canvas = document.getElementById("canvas") as HTMLCanvasElement;
+const err = document.getElementById("errors") as HTMLTextAreaElement;
+const errConsole = document.getElementById("err-console") as HTMLTextAreaElement;
+const execBtn = document.getElementById("exec-btn") as HTMLButtonElement;
+const clearBtn = document.getElementById("clear") as HTMLButtonElement;
+const closeErrBtn = document.getElementById("close-errors") as HTMLButtonElement;
+
+const themeSwitch = document.querySelector<HTMLLabelElement>('#theme-switcher');
+if (themeSwitch != null) {
+    themeSwitch.addEventListener('click', (e: Event) => switchCurrentTheme(e));
+}
+
+const graphicsSwitch = document.querySelector<HTMLLabelElement>('#graphics-switcher');
+if (graphicsSwitch != null) {
+    graphicsSwitch.addEventListener('click', (e: Event) => switchGraphicsMode(e));
+}
+
 function switchCurrentTheme(e: any) {
     if (e.target.checked != null) {
         if (e.target.checked) {
@@ -137,18 +155,17 @@ function switchCurrentTheme(e: any) {
     }
 }
 
-const themeSwitch = document.querySelector<HTMLLabelElement>('.switch');
-if (themeSwitch != null) {
-    themeSwitch.addEventListener('click', (e: Event) => switchCurrentTheme(e));
+function switchGraphicsMode(e: any) {
+    if (e.target.checked != null) {
+        if (e.target.checked) {
+            out.classList.add("hidden");
+            canvas.classList.remove("hidden");
+        } else {
+            canvas.classList.add("hidden");
+            out.classList.remove("hidden");
+        }
+    }
 }
-
-const out = document.getElementById("out") as HTMLTextAreaElement;
-const err = document.getElementById("errors") as HTMLTextAreaElement;
-const errConsole = document.getElementById("err-console") as HTMLTextAreaElement;
-const execBtn = document.getElementById("exec-btn") as HTMLButtonElement;
-const clearBtn = document.getElementById("clear") as HTMLButtonElement;
-const closeErrBtn = document.getElementById("close-errors") as HTMLButtonElement;
-
 
 (window as any).$nab = (window as any).$nab ?? {};
 (window as any).$nab.log = (s: string) => {
