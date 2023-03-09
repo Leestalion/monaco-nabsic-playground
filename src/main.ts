@@ -1,6 +1,7 @@
 import './style.css';
 import { monaco } from './mona/customMonaco';
- 
+import init, { javascriptFromBasic, membersForVar } from "../pkg/basic_lang.js";
+
 const langConfig: monaco.languages.LanguageConfiguration = {
   wordPattern: /(-?\d*\.\d\w*@?#?%?)|([^\`\~\!\^\&\*\(\)\-\=\+\[\{\]\}\\\|\;\:\'\"\,\.\<\>\/\?\s]+)/g,
   "comments": {
@@ -40,12 +41,6 @@ monaco.languages.register({
   ],
 });
 
-
-function membersForVar(nabsicString: string, variable: string) : string[] 
-{
-  return ["yoda", "chewbacca"];
-}
-
 monaco.languages.setLanguageConfiguration('nsharp', langConfig);
 
 monaco.languages.registerCompletionItemProvider('nsharp', {
@@ -66,11 +61,11 @@ monaco.languages.registerCompletionItemProvider('nsharp', {
     }
     const suggestions: monaco.languages.CompletionItem[] = [];
 
-    wordArraySuggestions.forEach(word => {
+    wordArraySuggestions.forEach((word: string) => {
       suggestions.push({
         label: word,
         kind: monaco.languages.CompletionItemKind.Method,
-        insertText: prevWord.word + "!"+word,
+        insertText: word,
         range: range,
       });
     });
@@ -104,7 +99,7 @@ monaco.languages.setMonarchTokensProvider('nsharp', {
   }
 });
 
-monaco.editor.create(document.querySelector<HTMLDivElement>('#editor')!, {
+const editor = monaco.editor.create(document.querySelector<HTMLDivElement>('#editor')!, {
   wordSeparators: `~!^&*()-=+[{]}\|;:'",.<>/?`,
   theme: "vs-dark",
   value: `Dim factorial@ := (n@ Number+) => (
@@ -127,3 +122,54 @@ ForEach(results@,
 )`,
   language: 'nsharp',
 });
+
+const out = document.getElementById("out") as HTMLTextAreaElement;
+const err = document.getElementById("errors") as HTMLTextAreaElement;
+const errConsole = document.getElementById("err-console") as HTMLTextAreaElement;
+const execBtn = document.getElementById("exec-btn") as HTMLButtonElement;
+const clearBtn = document.getElementById("clear") as HTMLButtonElement;
+const closeErrBtn = document.getElementById("close-errors") as HTMLButtonElement;
+
+
+(window as any).$nab = (window as any).$nab ?? {};
+(window as any).$nab.log = (s: string) => {
+  if (out)
+  out.value += s + "\n";
+}
+
+function exec() {
+    const input = editor.getModel()?.getValue() ?? "";
+    try {
+        const built = javascriptFromBasic(input);
+        eval(built);
+        if (typeof (window as any).$nab.__ans__ !== "undefined") {
+          (window as any).$nab.BuiltIn.debugprint((window as any).$nab.__ans__);
+        }
+        errConsole.classList.add("hidden");
+    } catch (e) {
+        errConsole.classList.remove("hidden");
+        if (typeof e === "string") {
+          err.value = e;
+        }
+    }
+}
+
+async function run() {
+    await init();
+    document.addEventListener("keyup", function (e) {
+        if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.code === "KeyX") {
+            e.stopPropagation();
+            exec();
+        }
+    });
+    closeErrBtn.addEventListener("click", function () {
+        errConsole.classList.add("hidden");
+    });
+    execBtn.addEventListener("click", function () {
+        exec();
+    });
+    clearBtn.addEventListener("click", function () {
+        out.value = "";
+    });
+}
+run();
