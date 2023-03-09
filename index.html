@@ -13,8 +13,13 @@
     <div class="hbox padbottom border-bottom padsides">
         <button type="button" id="exec-btn">Exec</button>
         <div class="grow padsides">press ctrl + shift + x to execute</div>
-        <div class="padsides dark-mode-text">Light Mode</div>
-        <label class="switch">
+        <label class="padsides dark-mode-text" for="check">Light Mode&nbsp;</label>
+        <label id="theme-switcher" class="switch">
+          <input type="checkbox">
+          <span class="slider round"></span>
+        </label>
+        <label for="check">Graphics mode&nbsp;</label>
+        <label id="graphics-switcher" class="switch">
           <input type="checkbox">
           <span class="slider round"></span>
         </label>
@@ -24,11 +29,12 @@
         <div class="hbox">
             <div class="grow">Errors: </div><button type="button" id="close-errors">close</button>
         </div>
-        <textarea class="errors" name="errors" id="errors" cols="80" rows="10">he</textarea>
+        <textarea class="errors" name="errors" id="errors" cols="80" rows="10"></textarea>
     </div>
     <div class="hbox align-top">
         <div id="editor"></div>
         <textarea class="grow" name="out" id="out" cols="80" rows="100"></textarea>
+        <canvas id="canvas" class="hidden grow"></canvas>
     </div>
   </body>
 </html>

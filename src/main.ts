@@ -127,7 +127,26 @@ const editor = monaco.editor.create(document.querySelector<HTMLDivElement>('#edi
     language: 'nsharp',
 });
 
-function switchCurrentTheme(e: any, darkModeText: HTMLDivElement) {
+const out = document.getElementById("out") as HTMLTextAreaElement;
+const canvas = document.getElementById("canvas") as HTMLCanvasElement;
+const err = document.getElementById("errors") as HTMLTextAreaElement;
+const errConsole = document.getElementById("err-console") as HTMLTextAreaElement;
+const execBtn = document.getElementById("exec-btn") as HTMLButtonElement;
+const clearBtn = document.getElementById("clear") as HTMLButtonElement;
+const closeErrBtn = document.getElementById("close-errors") as HTMLButtonElement;
+
+const darkModeText = document.querySelector<HTMLLabelElement>('.dark-mode-text');
+const themeSwitch = document.querySelector<HTMLLabelElement>('.switch');
+if (themeSwitch != null && darkModeText != null) {
+    themeSwitch.addEventListener('click', (e: Event) => switchCurrentTheme(e, darkModeText));
+}
+
+const graphicsSwitch = document.querySelector<HTMLLabelElement>('#graphics-switcher');
+if (graphicsSwitch != null) {
+    graphicsSwitch.addEventListener('click', (e: Event) => switchGraphicsMode(e));
+}
+
+function switchCurrentTheme(e: any, darkModeText: HTMLLabelElement) {
     if (e.target.checked != null) {
         if (e.target.checked) {
             monaco.editor.setTheme('vs-dark');
@@ -138,19 +157,18 @@ function switchCurrentTheme(e: any, darkModeText: HTMLDivElement) {
         }
     }
 }
-const darkModeText = document.querySelector<HTMLDivElement>('.dark-mode-text');
-const themeSwitch = document.querySelector<HTMLLabelElement>('.switch');
-if (themeSwitch != null && darkModeText != null) {
-    themeSwitch.addEventListener('click', (e: Event) => switchCurrentTheme(e, darkModeText));
+
+function switchGraphicsMode(e: any) {
+    if (e.target.checked != null) {
+        if (e.target.checked) {
+            out.classList.add("hidden");
+            canvas.classList.remove("hidden");
+        } else {
+            canvas.classList.add("hidden");
+            out.classList.remove("hidden");
+        }
+    }
 }
-
-const out = document.getElementById("out") as HTMLTextAreaElement;
-const err = document.getElementById("errors") as HTMLTextAreaElement;
-const errConsole = document.getElementById("err-console") as HTMLTextAreaElement;
-const execBtn = document.getElementById("exec-btn") as HTMLButtonElement;
-const clearBtn = document.getElementById("clear") as HTMLButtonElement;
-const closeErrBtn = document.getElementById("close-errors") as HTMLButtonElement;
-
 
 (window as any).$nab = (window as any).$nab ?? {};
 (window as any).$nab.log = (s: string) => {
