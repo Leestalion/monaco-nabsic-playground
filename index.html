@@ -9,10 +9,9 @@
     <script type="module" src="./src/main.ts"></script>
   </head>
   <body class="vbox">
-    <h1 class="padsides">N# Playground</h1>
-    <div class="hbox padbottom border-bottom padsides">
-        <button type="button" id="exec-btn">Exec</button>
-        <div class="grow padsides">press ctrl + shift + x to execute</div>
+    <div class="hbox space-between">
+      <h1 class="padsides">N# Playground</h1>
+      <div class="align-center">
         <label class="dark-mode-text" for="check">Light Mode&nbsp;</label>
         <label id="theme-switcher" class="switch">
           <input type="checkbox" id="theme-switch">
@@ -23,6 +22,11 @@
           <input type="checkbox" id="graphic-switch">
           <span class="slider round"></span>
         </label>
+      </div>
+    </div>
+    <div class="hbox padbottom border-bottom padsides">
+        <button type="button" id="exec-btn">Exec</button>
+        <div class="grow padsides">press ctrl + shift + x to execute</div>
         <button type="button" id="clear">Clear output</button>
     </div>
     <div id="err-console" class="vbox hidden">
