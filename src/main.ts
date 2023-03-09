@@ -43,6 +43,32 @@ monaco.languages.register({
 
 monaco.languages.setLanguageConfiguration('nsharp', langConfig);
 
+monaco.languages.setMonarchTokensProvider('nsharp', {
+  ignoreCase: true,
+  keywords: ["dim", "new", "as", "class", "public", "private", "if", "case", "for", "foreach", "while", "break", "continue"],
+  typeKeywords: [
+    'boolean', 'number', 'string', 'dictionary', 'cache', 'form', 'recordset', 'tuple', 'array'
+  ],
+  builtins: ["debugprint"],
+  tokenizer: {
+    root: [
+      [/[a-z][\w]*[#%]/, 'constant'],
+      [/([+\-*\/\^&:]:=|=|<|<=|>|>=|=>)/, 'operators'],
+      [/[a-z][\w]*[@$%]/, 'identifier'],
+      [ /[a-z][\w]*/, {
+        cases: {
+          '@keywords': 'keyword',
+          '@builtins': 'variable.other',
+          '@default': 'variable.other',
+        }
+      } ],
+      [/[0-9]+[.]?[0-9]*/, 'number.float'],
+      [/".*?"/, 'string'],
+      [/'.*?$/, 'comment']
+    ]
+  }
+});
+
 monaco.languages.registerCompletionItemProvider('nsharp', {
   triggerCharacters: ['.'],
   provideCompletionItems(model, position, context, token) {
@@ -74,31 +100,7 @@ monaco.languages.registerCompletionItemProvider('nsharp', {
   }
 });
 
-monaco.languages.setMonarchTokensProvider('nsharp', {
-  ignoreCase: true,
-  keywords: ["dim", "new", "as", "class", "public", "private", "if", "case", "for", "foreach", "while", "break", "continue"],
-  typeKeywords: [
-    'boolean', 'number', 'string', 'dictionary', 'cache', 'form', 'recordset', 'tuple', 'array'
-  ],
-  builtins: ["debugprint"],
-  tokenizer: {
-    root: [
-      [/[a-z][\w]*[#%]/, 'constant'],
-      [/([+\-*\/\^&:]:=|=|<|<=|>|>=|=>)/, 'operators'],
-      [/[a-z][\w]*[@$%]/, 'identifier'],
-      [ /[a-z][\w]*/, {
-        cases: {
-          '@keywords': 'keyword',
-          '@builtins': 'variable.other',
-          '@default': 'variable.other',
-        }
-      } ],
-      [/[0-9]+[.]?[0-9]*/, 'number.float'],
-      [/".*?"/, 'string'],
-      [/'.*?$/, 'comment']
-    ]
-  }
-});
+
 
 const urlParams = new URLSearchParams(window.location.search);
 const value = urlParams.get("code") ?? `Dim factorial@ := (n@ Number+) => (
@@ -111,21 +113,36 @@ const value = urlParams.get("code") ?? `Dim factorial@ := (n@ Number+) => (
 
 Dim range@ := New Array<Number+>():
 For(5,
-  range@.Append(Inc%)
+range@.Append(Inc%)
 ):
 
 Dim results@ := range@.Select((n@) => (factorial@.Invoke(n@))):
 
 ForEach(results@,
-  DebugPrint("factorial(" & Key% & ") -> " & Val%)
+DebugPrint("factorial(" & Key% & ") -> " & Val%)
 )`;
 
 const editor = monaco.editor.create(document.querySelector<HTMLDivElement>('#editor')!, {
   wordSeparators: `~!^&*()-=+[{]}\|;:'",.<>/?`,
-  theme: "vs-dark",
+  theme: "vs",
   value,
   language: 'nsharp',
 });
+
+function switchCurrentTheme(e:any) {
+  if (e.target.checked != null) {
+    if (e.target.checked) {
+      monaco.editor.setTheme('vs-dark');
+    } else {
+      monaco.editor.setTheme('vs');
+    }
+  }
+}
+
+const themeSwitch = document.querySelector<HTMLLabelElement>('.switch');
+if (themeSwitch != null) {
+  themeSwitch.addEventListener('click', (e:Event) => switchCurrentTheme(e));
+}
 
 const out = document.getElementById("out") as HTMLTextAreaElement;
 const err = document.getElementById("errors") as HTMLTextAreaElement;
