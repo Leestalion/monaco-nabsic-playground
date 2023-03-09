@@ -150,10 +150,10 @@ function switchCurrentTheme(e: any, darkModeText: HTMLLabelElement) {
     if (e.target.checked != null) {
         if (e.target.checked) {
             monaco.editor.setTheme('vs-dark');
-            darkModeText.innerHTML = "Dark Mode";
+            darkModeText.innerHTML = "Dark Mode&nbsp;";
         } else {
             monaco.editor.setTheme('vs');
-            darkModeText.innerHTML = "Light Mode";
+            darkModeText.innerHTML = "Light Mode&nbsp;";
         }
     }
 }
