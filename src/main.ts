@@ -40,6 +40,12 @@ monaco.languages.register({
   ],
 });
 
+
+function membersForVar(nabsicString: string, variable: string) : string[] 
+{
+  return ["yoda", "chewbacca"];
+}
+
 monaco.languages.setLanguageConfiguration('nsharp', langConfig);
 
 monaco.languages.registerCompletionItemProvider('nsharp', {
@@ -50,6 +56,8 @@ monaco.languages.registerCompletionItemProvider('nsharp', {
     }
     const word = model.getWordUntilPosition(position);
     const prevWord = model.getWordUntilPosition({ lineNumber: position.lineNumber, column: position.column - 1 });
+    const wordArraySuggestions = membersForVar(model.getValue(), prevWord.word);
+
     const range = {
       startLineNumber: position.lineNumber,
       endLineNumber: position.lineNumber,
@@ -57,18 +65,16 @@ monaco.languages.registerCompletionItemProvider('nsharp', {
       endColumn: word.endColumn
     }
     const suggestions: monaco.languages.CompletionItem[] = [];
-    suggestions.push({
-      label: "chewbacca",
-      kind: monaco.languages.CompletionItemKind.Method,
-      insertText: prevWord.word + "!chewbacca",
-      range: range,
+
+    wordArraySuggestions.forEach(word => {
+      suggestions.push({
+        label: word,
+        kind: monaco.languages.CompletionItemKind.Method,
+        insertText: prevWord.word + "!"+word,
+        range: range,
+      });
     });
-    suggestions.push({
-      label: "yoda",
-      kind: monaco.languages.CompletionItemKind.Method,
-      insertText: prevWord.word + "!yoda",
-      range: range,
-    });
+
     return { suggestions };
   }
 });
