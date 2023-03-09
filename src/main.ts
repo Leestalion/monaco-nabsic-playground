@@ -100,27 +100,30 @@ monaco.languages.setMonarchTokensProvider('nsharp', {
   }
 });
 
-const editor = monaco.editor.create(document.querySelector<HTMLDivElement>('#editor')!, {
-  wordSeparators: `~!^&*()-=+[{]}\|;:'",.<>/?`,
-  theme: "vs-dark",
-  value: `Dim factorial@ := (n@ Number+) => (
-    Dim fac@ := 1:
-    For(n@,
-        fac@ := fac@ * Inc%
-    ):
-    fac@
+const urlParams = new URLSearchParams(window.location.search);
+const value = urlParams.get("code") ?? `Dim factorial@ := (n@ Number+) => (
+  Dim fac@ := 1:
+  For(n@,
+      fac@ := fac@ * Inc%
+  ):
+  fac@
 ):
 
 Dim range@ := New Array<Number+>():
 For(5,
-    range@.Append(Inc%)
+  range@.Append(Inc%)
 ):
 
 Dim results@ := range@.Select((n@) => (factorial@.Invoke(n@))):
 
 ForEach(results@,
-    DebugPrint("factorial(" & Key% & ") -> " & Val%)
-)`,
+  DebugPrint("factorial(" & Key% & ") -> " & Val%)
+)`;
+
+const editor = monaco.editor.create(document.querySelector<HTMLDivElement>('#editor')!, {
+  wordSeparators: `~!^&*()-=+[{]}\|;:'",.<>/?`,
+  theme: "vs-dark",
+  value,
   language: 'nsharp',
 });
 
