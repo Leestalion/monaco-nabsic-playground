@@ -155,11 +155,11 @@ function switchCurrentTheme(e: any) {
         if (e.target.checked) {
             monaco.editor.setTheme('vs-dark');
             window.localStorage.setItem('theme', 'vs-dark');
-            if (darkModeText) darkModeText.innerHTML = "Dark Mode";
+            if (darkModeText) darkModeText.innerHTML = "Dark Mode&nbsp;";
         } else {
             monaco.editor.setTheme('vs');
             window.localStorage.setItem('theme', 'vs');
-            if (darkModeText) darkModeText.innerHTML = "Light Mode";
+            if (darkModeText) darkModeText.innerHTML = "Light Mode&nbsp;";
         }
     }
 }
