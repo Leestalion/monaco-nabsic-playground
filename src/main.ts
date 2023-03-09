@@ -136,6 +136,7 @@ const clearBtn = document.getElementById("clear") as HTMLButtonElement;
 const closeErrBtn = document.getElementById("close-errors") as HTMLButtonElement;
 const themeSwitchBtn = document.getElementById("theme-switch") as HTMLInputElement;
 const graphicsSwitchBtn = document.getElementById("graphic-switch") as HTMLInputElement;
+const shareBtn = document.getElementById("share") as HTMLButtonElement;
 
 const darkModeText = document.querySelector<HTMLLabelElement>('.dark-mode-text');
 const themeSwitch = document.querySelector<HTMLLabelElement>('.switch');
@@ -146,6 +147,14 @@ if (themeSwitch != null && darkModeText != null) {
 const graphicsSwitch = document.querySelector<HTMLLabelElement>('#graphics-switcher');
 if (graphicsSwitch != null) {
     graphicsSwitch.addEventListener('click', (e: Event) => switchGraphicsMode(e));
+}
+
+if (shareBtn != null) {
+    shareBtn.addEventListener('click', (e: Event) => copyToClipBoard(e));
+}
+
+if (shareBtn != null) {
+    shareBtn.addEventListener('mouseout', (e: Event) => outFunction(e));
 }
 
 if (window.localStorage.getItem('graphics-mode') === 'canvas') {
@@ -176,8 +185,6 @@ function switchCurrentTheme(e: any) {
     }
 }
 
-
-
 function setGraphicsMode(enable: boolean) {
     if (enable) {
         window.localStorage.setItem('graphics-mode', 'canvas');
@@ -193,6 +200,29 @@ function setGraphicsMode(enable: boolean) {
 function switchGraphicsMode(e: any) {
     if (e.target.checked != null) {
         setGraphicsMode(e.target.checked);
+    }
+}
+
+function copyToClipBoard(e: any) {
+    const tooltip = document.getElementById("tooltip");
+
+    const paramsObj = {
+        code: editor.getModel()?.getValue() ?? ""
+    }
+    const urlSearchParams = new URLSearchParams(paramsObj);
+    
+    const sharedLink = window.location.origin + "/?" + urlSearchParams.toString();
+
+    navigator.clipboard.writeText(sharedLink);
+    if (tooltip != null) {
+        tooltip.innerHTML = "Copied !";
+    }
+}
+
+function outFunction(e: any) {
+    const tooltip = document.getElementById("tooltip");
+    if (tooltip != null) {
+        tooltip.innerHTML = "Copy to clipboard";
     }
 }
 
