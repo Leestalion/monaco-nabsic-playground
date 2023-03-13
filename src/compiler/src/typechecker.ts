@@ -67,7 +67,7 @@ export function createTypeChecker(parser: Parser, permissive: boolean) {
 
     function assertSubtype(expr: Expr, sub: Type, type: Type) {
         if (permissive && typeEquals(sub, UnknownType)) {
-            return true;
+            return;
         }
         const t1 = reg.typeInfo(sub);
         if (t1 && !t1.isSubtype(type)) {
