@@ -1,0 +1,7 @@
+Dim a@:
+Dim b@ Number:
+Dim c@ Boolean+:
+Dim d@ Array<String>:
+Dim e@ Dictionary<Number+, Array<String>>:
+Dim f@ String := "hello":
+Dim g@ New Array<String>:

@@ -1,0 +1,17 @@
+1:
+"hello":
+#10/30/1990#:
+New Array<String>:
+Dim a@ := 2:
+a@:
+1 + 1:
+"hello".ToUpper():
+Dim asFilter@ := New Array<String>():
+asFilter@:
+asFilter@.Size():
+asFilter@.Get(1):
+Dim anIds@ := New Array<Number>():
+anIds@.Get(1):
+Dim fun@ := (n@ Number) => (n@ + n@):
+fun@.Invoke():
+If(True, 1, 2):

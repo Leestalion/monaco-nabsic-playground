@@ -1,0 +1,19 @@
+Dim bShow@ Boolean+ := InZoom% ORELSE Interactive%:
+Dim sGreetings@ := "Hello, " & "world!":
+Dim hello@ As Form := New Form("toto"):
+Dim world@ Array<Number+> := Array(2 * 9.5 + 1, 42):
+Dim quick@ New Array<String>:
+Dim nSize@ := world@.Size():
+Dim bContains@ := 3 IN (1, 2, 3):
+Dim nSumActive@ := Data.Count{Active=ebYes}:
+Dim add@ := (n@ Number+, m@ Number+) => (n@ + m@):
+Dim sub@ Func<Number+, Number+> := (n@, m@) => (n@ - m@):
+' Some comment
+For(3,
+    DebugPrint(Inc%) ' print loop index
+):
+If(hello@ >= world@,
+    \std\io!print#(\adm\Users!Id²["13"])
+,
+    \adm\Users!Id[#12/25/2023 01:23:45#]
+)

@@ -1,0 +1,148 @@
+Dim width@ := 640:
+Dim height@ := 480:
+Dim cellSize@ := 20:
+Dim bgColor@ := New Color(0, 0, 0):
+Dim snakeColor@ := New Color(0, 255, 0):
+Dim appleColor@ := New Color(255, 0, 0):
+Dim gridWidth@ := Int(width@ / cellSize@):
+Dim gridHeight@ := Int(height@ / cellSize@):
+
+Dim stepPeriod@ := 300:
+Dim speedX@ := 1:
+Dim speedY@ := 0:
+Dim snakeX@ := New Array<Number+>(0, 1, 2, 3):
+Dim snakeY@ := New Array<Number+>(0, 0, 0, 0):
+Dim score@ := 0:
+Dim nextReward@ := 10:
+
+Dim randomApplePos@ := () => (
+    New Array<Number+>(Int(Rnd() * gridWidth@), Int(Rnd() * gridHeight@))
+):
+
+Dim applePos@ := randomApplePos@.Invoke():
+
+Dim changeSnakeSpeed@ := (x@ Number+, y@ Number+) => (
+    If(speedX@ <> -x@ ANDALSO speedY@ <> -y@,
+        speedX@ := x@:
+        speedY@ := y@:
+    )
+):
+
+Dim nextSnakeHeadPos@ := () => (
+    New Array<Number+>(
+        snakeX@.Get(snakeX@.Size()) + speedX@,
+        snakeY@.Get(snakeY@.Size()) + speedY@
+    )
+):
+
+Dim moveSnake@ := () => (
+    For(snakeX@.Size() - 1,
+        snakeX@.Set(Inc%, snakeX@.Get(Inc% + 1)):
+        snakeY@.Set(Inc%, snakeY@.Get(Inc% + 1)):
+    ):
+    Dim headPos@ := nextSnakeHeadPos@.Invoke():
+    snakeX@.Set(snakeX@.Size(), headPos@.Get(1)):
+    snakeY@.Set(snakeY@.Size(), headPos@.Get(2)):
+):
+
+Dim growSnake@ := () => (
+    Dim headPosition@ := nextSnakeHeadPos@.Invoke():
+    snakeX@.Append(headPosition@.Get(1)):
+    snakeY@.Append(headPosition@.Get(2)):
+):
+
+Dim isSnakeHeadAt@ := (x@ Number+, y@ Number+) => (
+    Dim headX@ := snakeX@.Get(snakeX@.Size()):
+    Dim headY@ := snakeY@.Get(snakeY@.Size()):
+    headX@ = x@ ANDALSO headY@ = y@
+):
+
+Dim snakeWillEatApple@ := () => (
+    Dim nextHeadPos@ := nextSnakeHeadPos@.Invoke():
+    nextHeadPos@.Get(1) = applePos@.Get(1) ANDALSO nextHeadPos@.Get(2) = applePos@.Get(2)
+):
+
+Dim speedupGame@ := () => (
+    If(stepPeriod@ > 50,
+        stepPeriod@ := stepPeriod@ - 25:
+    )
+):
+
+Dim updateScore@ := () => (
+    score@ := score@ + nextReward@:
+    nextReward@ := nextReward@ + 10:
+):
+
+Dim isSnakeEatingItself@ := () => (
+    Dim res@ := False:
+    Dim i@ := 1:
+    While(i@ < snakeX@.Size() ANDALSO Not res@,
+        res@ := isSnakeHeadAt@.Invoke(snakeX@.Get(i@), snakeY@.Get(i@)):
+        i@ := i@ + 1:
+    ):
+    res@
+):
+
+Dim isSnakeOutOfBounds@ := () => (
+    Dim headPosX@ := snakeX@.Get(snakeX@.Size()):
+    Dim headPosY@ := snakeY@.Get(snakeY@.Size()):
+    headPosX@ < 0 ORELSE headPosX@ >= gridWidth@ ORELSE headPosY@ < 0 ORELSE headPosY@ >= gridHeight@
+):
+
+Dim isGameOver@ := () => (
+    isSnakeEatingItself@.Invoke() ORELSE isSnakeOutOfBounds@.Invoke()
+):
+
+Dim wrapper@ := QueryUnique("div"):
+Dim scoreBox@ := wrapper@.CreateChild("div").SetText("score: 0"):
+Dim canvas@ Canvas := New Canvas(wrapper@)
+    .Resize(640, 480)
+    .Clear(bgColor@):
+
+Dim drawGame@ := () => (
+    canvas@
+        .Clear(bgColor@)
+        .SetDrawColor(appleColor@)
+        .DrawRect(applePos@.Get(1) * cellSize@, applePos@.Get(2) * cellSize@, cellSize@, cellSize@)
+        .SetDrawColor(snakeColor@):
+    ForEach(snakeX@,
+        Dim x@ := Val%:
+        Dim y@ := snakeY@.Get(Key%):
+        canvas@.DrawRect(x@ * cellSize@, y@ * cellSize@, cellSize@, cellSize@)
+    ):
+    canvas@.Repaint()
+):
+
+Dim elapsedTimeSinceUpdate@ := 0:
+
+Window%.On(ebEventKeyDown, (e@ Event) => (
+    e@.StopPropagation():
+    Case(e@.Code(),
+        ebKeyCodeArrowDown,  changeSnakeSpeed@.Invoke( 0,  1),
+        ebKeyCodeArrowUp,    changeSnakeSpeed@.Invoke( 0, -1),
+        ebKeyCodeArrowLeft,  changeSnakeSpeed@.Invoke(-1,  0),
+        ebKeyCodeArrowRight, changeSnakeSpeed@.Invoke( 1,  0),
+        Null
+    )
+)):
+
+Window%.EachFrame((delta@) => (
+    elapsedTimeSinceUpdate@ := elapsedTimeSinceUpdate@ + delta@:
+    If(elapsedTimeSinceUpdate@ >= stepPeriod@,
+        elapsedTimeSinceUpdate@ := 0:
+        If(snakeWillEatApple@.Invoke(),
+            growSnake@.Invoke():
+            applePos@ := randomApplePos@.Invoke():
+            speedupGame@.Invoke():
+            updateScore@.Invoke():
+            scoreBox@.SetText("score: " & score@):
+        ,
+            moveSnake@.Invoke():
+        ):
+        drawGame@.Invoke():
+        If(isGameOver@.Invoke(),
+            Alert("Game Over !"):
+            RefreshPage():
+        ):
+    )
+))
