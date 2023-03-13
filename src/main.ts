@@ -71,7 +71,7 @@ monaco.languages.setMonarchTokensProvider('nsharp', {
 
 monaco.languages.registerCompletionItemProvider('nsharp', {
     triggerCharacters: ['.'],
-    provideCompletionItems(model, position, context, token) {
+    provideCompletionItems(model, position, context, _token) {
         if (context.triggerCharacter !== '.') {
             return { suggestions: [] };
         }
@@ -203,23 +203,18 @@ function switchGraphicsMode(e: any) {
     }
 }
 
-function copyToClipBoard(e: any) {
+function copyToClipBoard(_e: any) {
     const tooltip = document.getElementById("tooltip");
+    const sharedLink = new URL(window.location.href);
+    sharedLink.searchParams.set('code', editor.getModel()?.getValue() ?? "");
 
-    const paramsObj = {
-        code: editor.getModel()?.getValue() ?? ""
-    }
-    const urlSearchParams = new URLSearchParams(paramsObj);
-    
-    const sharedLink = window.location.origin + "/?" + urlSearchParams.toString();
-
-    navigator.clipboard.writeText(sharedLink);
+    navigator.clipboard.writeText(sharedLink.href);
     if (tooltip != null) {
         tooltip.innerHTML = "Copied !";
     }
 }
 
-function outFunction(e: any) {
+function outFunction(_e: any) {
     const tooltip = document.getElementById("tooltip");
     if (tooltip != null) {
         tooltip.innerHTML = "Copy to clipboard";
