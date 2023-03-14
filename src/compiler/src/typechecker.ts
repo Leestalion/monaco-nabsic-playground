@@ -51,9 +51,12 @@ function resolveMethodParams(type: Type, typeParams: (Type|number|[number, numbe
     return result;
 }
 
-function lookupType(type: Type, typeParam: Type|number): Type {
+function lookupType(type: Type, typeParam: Type|number|"this"): Type {
     if (typeof typeParam === "number") {
         return type.params.at(typeParam) ?? UnknownType;
+    }
+    if (typeParam === "this") {
+        return type;
     }
     return typeParam;
 }
@@ -85,7 +88,7 @@ export function createTypeChecker(parser: Parser, permissive: boolean) {
         if (permissive && typeEquals(sub, UnknownType)) {
             return;
         }
-        if (symEqual(sub.sym, type.sym) && !sub.nullable) {
+        if (symEqual(sub.sym, type.sym) && (permissive || !sub.nullable)) {
             return;
         }
         const t1 = reg.typeInfo(sub);
@@ -148,6 +151,10 @@ export function createTypeChecker(parser: Parser, permissive: boolean) {
         return { type: returnType, span: expr.span, kind: "call", expr, args };
     }
 
+    function inferCaseStatement(expr: TypedExpr, args: TypedExpr[]): TypedExpr {
+        return { type: args.at(-1)?.type ?? UnknownType, span: expr.span, kind: "call", expr, args };
+    }
+
     function inferCallExpr(expr: Expr, callee: Expr, args: Expr[]): TypedExpr {
         const tArgs = args.map(inferType);
         const tCallee = inferType(callee);
@@ -155,6 +162,8 @@ export function createTypeChecker(parser: Parser, permissive: boolean) {
             switch (callee.sym.name) {
                 case "if":
                     return inferIfStatement(tCallee, tArgs);
+                case "case":
+                    return inferCaseStatement(tCallee, tArgs);
                 default:
                     break;
             }
@@ -186,7 +195,6 @@ export function createTypeChecker(parser: Parser, permissive: boolean) {
         let type = builtInType("boolean", nullable);
         if (op === "&") {
             assertSubtype(expr, tLeft.type, StringType);
-            assertSubtype(expr, tRight.type, StringType);
             type = builtInType("string", nullable);
         } else if (op === "+" || op === "-" || op === "*" || op === "/" || op === "^") {
             assertSubtype(expr, tLeft.type, NumberType);

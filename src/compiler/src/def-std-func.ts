@@ -30,7 +30,7 @@ export function defineStandardFunctions(reg: TypeRegistry) {
     reg.setSymType(builtInSym("exp"), callableType([NumberNotNull, NumberNotNull]));
     reg.setSymType(builtInSym("ceil"), callableType([NumberNotNull, NumberNotNull]));
     reg.setSymType(builtInSym("int"), callableType([NumberNotNull, NumberNotNull]));
-    reg.setSymType(builtInSym("rnd"), callableType([NumberNotNull, NumberNotNull]));
+    reg.setSymType(builtInSym("rnd"), callableType([NumberNotNull]));
     reg.setSymType(builtInSym("mod"), callableType([NumberNotNull, NumberNotNull, NumberNotNull]));
     reg.setSymType(builtInSym("sqr"), callableType([NumberNotNull, NumberNotNull]));
     reg.setSymType(builtInSym("cos"), callableType([NumberNotNull, NumberNotNull]));

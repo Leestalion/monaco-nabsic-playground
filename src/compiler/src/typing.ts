@@ -53,7 +53,7 @@ export function typeIdToString(id: TypeId, nullInsensitive = false): string {
 export type Method = {
     name: string,
     params: (Type|number|[number, number])[],
-    ret: Type|number,
+    ret: Type|number|"this",
 };
 
 export type TypeInfo = {

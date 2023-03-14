@@ -59,7 +59,7 @@ export function defineStandardTypes(reg: TypeRegistry) {
         { name: "Set", params: [NumberType, 0], ret: NullType },
         { name: "Append", params: [0], ret: NullType },
         { name: "Select", params: [{ sym: builtInSym("func"), nullable: true, params: [ObjectType, ObjectType] }], ret: ArrayType },
-        { name: "Where", params: [{ sym: builtInSym("func"), nullable: true, params: [ObjectType, BooleanNotNull] }], ret: ArrayType },
+        { name: "Where", params: [{ sym: builtInSym("func"), nullable: true, params: [ObjectType, BooleanNotNull] }], ret: "this" },
     ]));
     const dictInfo = reg.setTypeInfo(DictType, createTypeInfo("Dictionary", DictType, ObjectTypeInfo, [
         { name: "Count", params: [], ret: NumberNotNull },
