@@ -68,6 +68,6 @@ export function defineStandardTypes(reg: TypeRegistry) {
     ]));
     reg.setTypeInfo(CacheType, createTypeInfo("Cache", CacheType, dictInfo, []));
     reg.setTypeInfo(FuncType, createTypeInfo("Func", FuncType, ObjectTypeInfo, [
-        { name: "Invoke", params: [], ret: -1 },
+        { name: "Invoke", params: [[0, -1]], ret: -1 },
     ]));
 }

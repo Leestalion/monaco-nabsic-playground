@@ -1,6 +1,6 @@
 import { builtInType, Method, nullableType, Type, typeEquals, TypeInfo } from "./typing.js";
 import { DimExpr, Expr, FuncParameter, Parser, Span, Value } from "./parse.js";
-import { isGlobalBuiltIn, Sym } from "./sym.js";
+import { isGlobalBuiltIn, Sym, symEqual } from "./sym.js";
 import { BinaryOperator } from "./operator.js";
 import { createTypeRegistry } from "./typeregistry.js";
 import { BooleanType, CallableType, defineStandardTypes, NullType, NumberType, StringType, UnknownType } from "./def-std-types.js";
@@ -35,6 +35,22 @@ type TypingError = { expr: Expr } & (
     { kind: "wrong-arity", expected: number[], got: number } |
     { kind: "already-declared", sym: Sym });
 
+function resolveMethodParams(type: Type, typeParams: (Type|number|[number, number])[]): Type[] {
+    const result: Type[] = [];
+    for (const typeParam of typeParams) {
+        if (typeof typeParam === "number") {
+            result.push(type.params.at(typeParam) ?? UnknownType);
+        } else if (Array.isArray(typeParam)) {
+            let [start, end] = typeParam;
+            const params = type.params.slice(start, end);
+            result.push(...params);
+        } else {
+            result.push(typeParam);
+        }
+    }
+    return result;
+}
+
 function lookupType(type: Type, typeParam: Type|number): Type {
     if (typeof typeParam === "number") {
         return type.params.at(typeParam) ?? UnknownType;
@@ -67,6 +83,9 @@ export function createTypeChecker(parser: Parser, permissive: boolean) {
 
     function assertSubtype(expr: Expr, sub: Type, type: Type) {
         if (permissive && typeEquals(sub, UnknownType)) {
+            return;
+        }
+        if (symEqual(sub.sym, type.sym) && !sub.nullable) {
             return;
         }
         const t1 = reg.typeInfo(sub);
@@ -140,13 +159,11 @@ export function createTypeChecker(parser: Parser, permissive: boolean) {
                     break;
             }
         }
-        if (!permissive) {
-            if (args.length !== tCallee.type.params.length - 1) {
-                signalError({ expr, kind: "wrong-arity", expected: [tCallee.type.params.length - 1], got: args.length });
-            } else {
-                for (const [i, arg] of tArgs.entries()) {
-                    assertSubtype(expr, arg.type, tCallee.type.params[i]);
-                }
+        if (args.length !== tCallee.type.params.length - 1) {
+            signalError({ expr, kind: "wrong-arity", expected: [tCallee.type.params.length - 1], got: args.length });
+        } else {
+            for (const [i, arg] of tArgs.entries()) {
+                assertSubtype(expr, arg.type, tCallee.type.params[i]);
             }
         }
         const returnType = tCallee.type.params.at(-1) ?? UnknownType;
@@ -195,7 +212,7 @@ export function createTypeChecker(parser: Parser, permissive: boolean) {
             }
             if (typeof member !== "undefined") {
                 type = builtInType("callable", false, [
-                    ...member.params.map(p => lookupType(tObject.type, p)), 
+                    ...resolveMethodParams(tObject.type, member.params), 
                     lookupType(tObject.type, member.ret)]);
             } else {
                 signalError({ expr, kind: "unknown-member", sym: method, of: tObject.type });

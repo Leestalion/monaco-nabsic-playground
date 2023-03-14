@@ -52,7 +52,7 @@ export function typeIdToString(id: TypeId, nullInsensitive = false): string {
 
 export type Method = {
     name: string,
-    params: (Type|number)[],
+    params: (Type|number|[number, number])[],
     ret: Type|number,
 };
 
