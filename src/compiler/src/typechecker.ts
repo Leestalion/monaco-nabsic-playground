@@ -1,6 +1,6 @@
 import { builtInType, Method, nullableType, Type, typeEquals, TypeInfo } from "./typing.js";
 import { DimExpr, Expr, FuncParameter, Parser, Span, Value } from "./parse.js";
-import { isGlobalBuiltIn, Sym, symEqual } from "./sym.js";
+import { isGlobalBuiltIn, Sym, symEqual, symToString } from "./sym.js";
 import { BinaryOperator } from "./operator.js";
 import { createTypeRegistry } from "./typeregistry.js";
 import { BooleanType, CallableType, defineStandardTypes, NullType, NumberType, StringType, UnknownType } from "./def-std-types.js";
@@ -27,12 +27,12 @@ type TypedExpr =
     { kind: "access", object: TypedExpr, method: Sym } |
     { kind: "lambda", params: FuncParameter[], body: TypedExpr });
 
-type TypingError = { expr: Expr } & (
+export type TypingError = { expr: Expr } & (
     { kind: "not-subtype", type: Type, of: Type } |
     { kind: "unknown-member", sym: Sym, of: Type } |
     { kind: "unknown-function", sym: Sym } |
     { kind: "unknown-var", sym: Sym } |
-    { kind: "wrong-arity", expected: number[], got: number } |
+    { kind: "wrong-arity", name: string, expected: number[], got: number } |
     { kind: "already-declared", sym: Sym });
 
 function resolveMethodParams(type: Type, typeParams: (Type|number|[number, number])[]): Type[] {
@@ -134,7 +134,7 @@ export function createTypeChecker(parser: Parser, permissive: boolean) {
     function inferIfStatement(expr: TypedExpr, args: TypedExpr[]): TypedExpr {
         let returnType = UnknownType;
         if (args.length !== 2 && args.length !== 3) {
-            signalError({ expr, kind: "wrong-arity", expected: [2, 3], got: args.length });
+            signalError({ expr, kind: "wrong-arity", name: "If", expected: [2, 3], got: args.length });
         }
         assertSubtype(expr, args[0].type, BooleanType);
         if (args.length === 3) {
@@ -168,8 +168,12 @@ export function createTypeChecker(parser: Parser, permissive: boolean) {
                     break;
             }
         }
+        let name = "";
+        if (tCallee.kind === "var") {
+            name = symToString(tCallee.sym);
+        }
         if (args.length !== tCallee.type.params.length - 1) {
-            signalError({ expr, kind: "wrong-arity", expected: [tCallee.type.params.length - 1], got: args.length });
+            signalError({ expr, kind: "wrong-arity", name, expected: [tCallee.type.params.length - 1], got: args.length });
         } else {
             for (const [i, arg] of tArgs.entries()) {
                 assertSubtype(expr, arg.type, tCallee.type.params[i]);
