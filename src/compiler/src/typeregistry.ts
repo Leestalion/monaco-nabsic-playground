@@ -8,10 +8,10 @@ export function createTypeRegistry() {
     const typesByArgName = new Map<string, Type>();
     return {
         typeInfo(id: TypeId): TypeInfo | undefined {
-            return typeInfoById.get(typeIdToString(id));
+            return typeInfoById.get(typeIdToString(id, true));
         },
         setTypeInfo(id: TypeId, info: TypeInfo) {
-            typeInfoById.set(typeIdToString(id), info);
+            typeInfoById.set(typeIdToString(id, true), info);
             return info;
         },
         symType(sym: Sym): Type | undefined {

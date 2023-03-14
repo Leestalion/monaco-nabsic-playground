@@ -65,6 +65,22 @@ const separators = new Set([":", ",", "(", ")", "[", "]", "{", "}", " ", "\t", "
 const sigils = new Set(["@", "$", "#", "%", "£", "μ"])
 const reDate = /(\d{2})\/(\d{2})\/(\d{4})(?:\s(\d{2}):(\d{2}):(\d{2}))?/
 
+export function parseSym(sym: string): Sym {
+    let kind: SymKind = "";
+    const sigil = sym[sym.length-1];
+    if (sigils.has(sigil)) {
+        kind = sigil as SymKind;
+        sym = sym.substring(0, sym.length-1)
+    }
+    const pathSym = sym.split("!");
+    if (parseSym.length === 2) {
+        const [path, name] = pathSym;
+        return { kind, path, name };
+    } else {
+        return { kind, name: sym, path: undefined };
+    }
+}
+
 export function createTokenStream(src: string) {
     let pos = 0;
     let line = 0;
@@ -120,22 +136,6 @@ export function createTokenStream(src: string) {
         const res = resFromTok({ kind: "str", value: src.substring(tokStart+1, tokEnd).replaceAll("\"\"", "\"") }, tokStart, tokEnd);
         consumeChar();
         return res; 
-    }
-
-    function parseSym(sym: string): Sym {
-        let kind: SymKind = "";
-        const sigil = sym[sym.length-1];
-        if (sigils.has(sigil)) {
-            kind = sigil as SymKind;
-            sym = sym.substring(0, sym.length-1)
-        }
-        const pathSym = sym.split("!");
-        if (parseSym.length === 2) {
-            const [path, name] = pathSym;
-            return { kind, path, name };
-        } else {
-            return { kind, name: sym, path: undefined };
-        }
     }
 
     function consumeSymbol(): IteratorResult<TokenResult> {

@@ -120,28 +120,28 @@ function createJavaScriptGenerator(parser: Iterator<Expr>) {
                 case "for": {
                     const iterations = exprToJavaScript(expr.args[0]);
                     const body = exprToJavaScript(expr.args[1]);
-                    return `$nab.for((${iterations}), __inc__ => {{ return ${body}; }})`;
+                    return `$nab.for((${iterations}), __inc__ => { return ${body}; })`;
                 }
                 case "while": {
                     const cond = exprToJavaScript(expr.args[0]);
                     const body = exprToJavaScript(expr.args[1]);
-                    return `$nab.while(() => (${cond}), () => {{ return ${body}; }})`;
+                    return `$nab.while(() => (${cond}), () => { return ${body}; })`;
                 }
                 case "foreach": {
                     const iterable = exprToJavaScript(expr.args[0]);
                     const body = exprToJavaScript(expr.args[1]);
-                    return `$nab.foreach((${iterable}), (__key__, __val__) => {{ return ${body}; }})`;
+                    return `$nab.foreach((${iterable}), (__key__, __val__) => { return ${body}; })`;
                 }
                 case "break": case "continue": case "return": {
                     const value = expr.args.length === 0 ?
                         "undefined" :
                         exprToJavaScript(expr.args[0]);
-                    return `(() => {{ throw {{ flow: $nab.${expr.expr.sym.name}, value: ${value} }}; }})()`;
+                    return `(() => { throw { flow: $nab.${expr.expr.sym.name}, value: ${value} }; })()`;
                 }
                 case "catch": {
                     const tryBody = exprToJavaScript(expr.args[0]);
                     const exceptBody = exprToJavaScript(expr.args[1]);
-                    return `(() => {{ var $catch; try {{ $catch = ${tryBody}; }} catch (__errmsg__) {{ if (__errmsg__ instanceof $nab.BuiltIn.string) {{ $catch = ${exceptBody}; }} else {{ throw __errmsg__; }} }} return $catch; }})()`;
+                    return `(() => { var $catch; try { $catch = ${tryBody}; } catch (__errmsg__) { if (__errmsg__ instanceof $nab.BuiltIn.string) { $catch = ${exceptBody}; } else { throw __errmsg__; } } return $catch; })()`;
                 }
             }
             return `$nab.BuiltIn[${JSON.stringify(symToString(expr.expr.sym))}](${expr.args.map(exprToJavaScript).join(",")})`;
@@ -244,5 +244,5 @@ export function generateJavaScript(parser: Iterator<Expr>): string {
     const gen = createJavaScriptGenerator(parser);
     const statements = Array.from(gen);
     const varDecl = gen.vars.size === 0 ? "" : `var ${Array.from(gen.vars).join(",")};`;
-    return `(function () { ${varDecl} $nab.__ans__ = ${statements.join(",")}; }());`;
+    return `(function () { ${varDecl} $nab.__ans__ = (${statements.join(",")}); }());`;
 }

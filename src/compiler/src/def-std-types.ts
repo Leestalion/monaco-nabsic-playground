@@ -1,10 +1,10 @@
-import { builtInType, createTypeInfo } from "./typing.js";
+import { builtInSym, builtInType, createTypeInfo } from "./typing.js";
 import { TypeRegistry } from "./typeregistry.js";
 
 
-export const UnknownType = builtInType("<unknown>");
-export const ObjectType = builtInType("object");
-export const NullType = builtInType("null");
+export const UnknownType = builtInType("<unknown>", true);
+export const ObjectType = builtInType("object", true);
+export const NullType = builtInType("null", true);
 export const CallableType = builtInType("callable");
 export const BooleanType = builtInType("boolean", true);
 export const BooleanNotNull = builtInType("boolean");
@@ -14,7 +14,7 @@ export const DateType = builtInType("date", true);
 export const DateNotNull = builtInType("date");
 export const StringType = builtInType("string", true);
 export const StringNotNull = builtInType("string");
-export const BufferType = builtInType("Buffer", true);
+export const BufferType = builtInType("buffer", true);
 export const ArrayType = builtInType("array", true);
 export const DictType = builtInType("dictionary", true);
 export const CacheType = builtInType("cache", true);
@@ -58,6 +58,8 @@ export function defineStandardTypes(reg: TypeRegistry) {
         { name: "Get", params: [NumberType], ret: 0 },
         { name: "Set", params: [NumberType, 0], ret: NullType },
         { name: "Append", params: [0], ret: NullType },
+        { name: "Select", params: [{ sym: builtInSym("func"), nullable: true, params: [ObjectType, ObjectType] }], ret: ArrayType },
+        { name: "Where", params: [{ sym: builtInSym("func"), nullable: true, params: [ObjectType, BooleanNotNull] }], ret: ArrayType },
     ]));
     const dictInfo = reg.setTypeInfo(DictType, createTypeInfo("Dictionary", DictType, ObjectTypeInfo, [
         { name: "Count", params: [], ret: NumberNotNull },

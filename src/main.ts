@@ -1,6 +1,6 @@
 import './style.css';
 import { monaco } from './mona/customMonaco';
-import init, { javascriptFromBasic, membersForVar } from "../pkg/basic_lang.js";
+import { javascriptFromBasic, membersForVar } from './compiler/src/mod';
 
 const langConfig: monaco.languages.LanguageConfiguration = {
     wordPattern: /(-?\d*\.\d\w*@?#?%?)|([^\`\~\!\^\&\*\(\)\-\=\+\[\{\]\}\\\|\;\:\'\"\,\.\<\>\/\?\s]+)/g,
@@ -245,7 +245,6 @@ function exec() {
 }
 
 async function run() {
-    await init();
     document.addEventListener("keyup", function (e) {
         if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.code === "KeyX") {
             e.stopPropagation();

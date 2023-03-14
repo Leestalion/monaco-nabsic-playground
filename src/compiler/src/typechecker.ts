@@ -259,6 +259,7 @@ export function createTypeChecker(parser: Parser, permissive: boolean) {
 
     const checker = {
         errors,
+        reg,
         next(): IteratorResult<TypedExpr> {
             const expr = parser.next();
             if (expr.done) {

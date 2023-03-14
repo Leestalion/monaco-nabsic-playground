@@ -45,8 +45,8 @@ export function typeEquals(t1: Type, t2: Type): boolean {
         t1.params.every((p, i) => typeEquals(p, t2.params[i]));
 }
 
-export function typeIdToString(id: TypeId): string {
-    const nullable = id.nullable ? "" : "+";
+export function typeIdToString(id: TypeId, nullInsensitive = false): string {
+    const nullable = (id.nullable || nullInsensitive) ? "" : "+";
     return `${symToString(id.sym)}${nullable}`;
 }
 
