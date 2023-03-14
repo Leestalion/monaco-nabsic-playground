@@ -1,3 +1,4 @@
+import { parseErrorToString, typingErrorToString } from "./error-msg.js";
 import { generateJavaScript } from "./generatejs.js";
 import { createParser } from "./parse.js";
 import { createTokenStream, parseSym } from "./tokenize.js";
@@ -12,10 +13,10 @@ export function javascriptFromBasic(input: string): string {
     if (parser.errors.length > 0 || checker.errors.length > 0) {
         let errmsg = "";
         for (const err of parser.errors) {
-            errmsg += JSON.stringify(err) + "\n";
+            errmsg += parseErrorToString(err) + "\n";
         }
         for (const err of checker.errors) {
-            errmsg += JSON.stringify(err) + "\n";
+            errmsg += typingErrorToString(err) + "\n";
         }
         throw errmsg;
     }

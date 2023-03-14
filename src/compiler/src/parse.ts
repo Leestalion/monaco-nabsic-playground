@@ -417,7 +417,10 @@ export function createParser(tokens: TokenStream, stopOnFirstError: boolean, dec
         if (!tok.done) {
             lastPlace = tok.value.place;
         }
-        let expr = parseNextToken(undefined, minBp);
+        let expr: Expr|undefined;
+        do {
+            expr = parseNextToken(undefined, minBp);
+        } while (tokens.hasNext() &&  typeof expr === "undefined");
         let nextTok;
         while (typeof (nextTok = tryPeekToken()) !== "undefined") {
             expr = expectNonNull(expr, "unreachable");

@@ -87,13 +87,10 @@ export function createTokenStream(src: string) {
     let lineFirstChar = 0;
     let peeked: IteratorResult<TokenResult>|undefined = undefined;
 
-    function currentPlace(tokStart: number, tokEnd: number): Place {
-        return {
-            line: line,
-            col: tokStart - lineFirstChar, 
-            lastCol: tokEnd - lineFirstChar,
-            start: tokStart, end: tokEnd,
-        };   
+    function currentPlace(start: number, end: number): Place {
+        let col = start - lineFirstChar;
+        let lastCol = end - lineFirstChar;
+        return { line, col, lastCol, start, end };
     }
 
     function resFromTok(token: Token|undefined, tokStart: number, tokEnd: number): IteratorResult<TokenResult> {
