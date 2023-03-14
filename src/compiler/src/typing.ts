@@ -24,8 +24,8 @@ export function builtInSym(name: string): Sym {
     return { kind: "", name };
 }
 
-export function callableType(params: Type[]): Type {
-    return { sym: builtInSym("callable"), nullable: false, params };
+export function callableType(params: Type[], ret: Type): Type {
+    return { sym: builtInSym("callable"), nullable: false, params: [...params, ret] };
 }
 
 export function typeIdEquals(t1: TypeId, t2: TypeId): boolean {

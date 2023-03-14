@@ -21,16 +21,21 @@ export const CacheType = builtInType("cache", true);
 export const FuncType = builtInType("func", true);
 
 export function defineStandardTypes(reg: TypeRegistry) {
-    const UnknownTypeInfo = reg.setTypeInfo(UnknownType, createTypeInfo("<unknown>", UnknownType, undefined, []));
-    const ObjectTypeInfo = reg.setTypeInfo(ObjectType, createTypeInfo("Object", ObjectType, UnknownTypeInfo, [
+    const UnknownTypeInfo = reg.registerTypeInfo(createTypeInfo("<unknown>", UnknownType, undefined, []));
+    const ObjectTypeInfo = reg.registerTypeInfo(createTypeInfo("Object", ObjectType, UnknownTypeInfo, [
         { name: "GetTypeName", params: [], ret: StringType },
         { name: "SerializeToJson", params: [], ret: StringType },
     ]));
-    reg.setTypeInfo(NullType, createTypeInfo("Null", NullType, ObjectTypeInfo, []));
-    reg.setTypeInfo(BooleanType, createTypeInfo("Boolean", BooleanType, ObjectTypeInfo, []));
-    reg.setTypeInfo(NumberType, createTypeInfo("Number", NumberType, ObjectTypeInfo, []));
-    reg.setTypeInfo(DateType, createTypeInfo("Number", NumberType, ObjectTypeInfo, []));
-    reg.setTypeInfo(StringType, createTypeInfo("String", StringType, ObjectTypeInfo, [
+    const DictTypeInfo = reg.registerTypeInfo(createTypeInfo("Dictionary", DictType, ObjectTypeInfo, [
+        { name: "Count", params: [], ret: NumberNotNull },
+        { name: "Get", params: [0], ret: 1 },
+        { name: "Set", params: [0, 1], ret: NullType },
+    ]));
+    reg.registerTypeInfo(createTypeInfo("Null", NullType, ObjectTypeInfo, []));
+    reg.registerTypeInfo(createTypeInfo("Boolean", BooleanType, ObjectTypeInfo, []));
+    reg.registerTypeInfo(createTypeInfo("Number", NumberType, ObjectTypeInfo, []));
+    reg.registerTypeInfo(createTypeInfo("Number", NumberType, ObjectTypeInfo, []));
+    reg.registerTypeInfo(createTypeInfo("String", StringType, ObjectTypeInfo, [
         { name: "ToUpper", params: [], ret: StringType },
         { name: "ToUpperInvariant", params: [], ret: StringType },
         { name: "ToLower", params: [], ret: StringType },
@@ -50,10 +55,10 @@ export function defineStandardTypes(reg: TypeRegistry) {
         { name: "Split", params: [StringType], ret: { ...ArrayType, params: [StringType] } },
         { name: "Replace", params: [StringType, StringType], ret: StringType },
     ]));
-    reg.setTypeInfo(BufferType, createTypeInfo("Buffer", BufferType, ObjectTypeInfo, [
+    reg.registerTypeInfo(createTypeInfo("Buffer", BufferType, ObjectTypeInfo, [
         { name: "GetValue", params: [], ret: StringType },
     ]));
-    reg.setTypeInfo(ArrayType, createTypeInfo("Array", ArrayType, ObjectTypeInfo, [
+    reg.registerTypeInfo(createTypeInfo("Array", ArrayType, ObjectTypeInfo, [
         { name: "Size", params: [], ret: NumberNotNull },
         { name: "Get", params: [NumberType], ret: 0 },
         { name: "Set", params: [NumberType, 0], ret: NullType },
@@ -61,13 +66,8 @@ export function defineStandardTypes(reg: TypeRegistry) {
         { name: "Select", params: [{ sym: builtInSym("func"), nullable: true, params: [ObjectType, ObjectType] }], ret: ArrayType },
         { name: "Where", params: [{ sym: builtInSym("func"), nullable: true, params: [ObjectType, BooleanNotNull] }], ret: "this" },
     ]));
-    const dictInfo = reg.setTypeInfo(DictType, createTypeInfo("Dictionary", DictType, ObjectTypeInfo, [
-        { name: "Count", params: [], ret: NumberNotNull },
-        { name: "Get", params: [0], ret: 1 },
-        { name: "Set", params: [0, 1], ret: NullType },
-    ]));
-    reg.setTypeInfo(CacheType, createTypeInfo("Cache", CacheType, dictInfo, []));
-    reg.setTypeInfo(FuncType, createTypeInfo("Func", FuncType, ObjectTypeInfo, [
+    reg.registerTypeInfo(createTypeInfo("Cache", CacheType, DictTypeInfo, []));
+    reg.registerTypeInfo(createTypeInfo("Func", FuncType, ObjectTypeInfo, [
         { name: "Invoke", params: [[0, -1]], ret: -1 },
     ]));
 }

@@ -10,8 +10,8 @@ export function createTypeRegistry() {
         typeInfo(id: TypeId): TypeInfo | undefined {
             return typeInfoById.get(typeIdToString(id, true));
         },
-        setTypeInfo(id: TypeId, info: TypeInfo) {
-            typeInfoById.set(typeIdToString(id, true), info);
+        registerTypeInfo(info: TypeInfo) {
+            typeInfoById.set(typeIdToString(info.id, true), info);
             return info;
         },
         symType(sym: Sym): Type | undefined {
