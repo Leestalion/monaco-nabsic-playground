@@ -101,7 +101,8 @@ monaco.languages.registerCompletionItemProvider('nsharp', {
 });
 
 const urlParams = new URLSearchParams(window.location.search);
-const value = urlParams.get("code") ?? `Dim factorial@ := (n@ Number+) => (
+
+const value = urlParams.get("code") ?? window.localStorage.getItem("saved-code") ?? `Dim factorial@ := (n@ Number+) => (
     Dim fac@ := 1:
     For(n@,
         fac@ := fac@ * Inc%
@@ -137,6 +138,7 @@ const closeErrBtn = document.getElementById("close-errors") as HTMLButtonElement
 const themeSwitchBtn = document.getElementById("theme-switch") as HTMLInputElement;
 const graphicsSwitchBtn = document.getElementById("graphic-switch") as HTMLInputElement;
 const shareBtn = document.getElementById("share") as HTMLButtonElement;
+const saveBtn = document.getElementById("save") as HTMLButtonElement;
 
 const darkModeText = document.querySelector<HTMLLabelElement>('.dark-mode-text');
 const themeSwitch = document.querySelector<HTMLLabelElement>('.switch');
@@ -155,6 +157,10 @@ if (shareBtn != null) {
 
 if (shareBtn != null) {
     shareBtn.addEventListener('mouseout', (e: Event) => outFunction(e));
+}
+
+if (saveBtn != null) {
+    saveBtn.addEventListener('click', (e: Event) => saveCode(e));
 }
 
 if (window.localStorage.getItem('graphics-mode') === 'canvas') {
@@ -219,6 +225,10 @@ function outFunction(_e: any) {
     if (tooltip != null) {
         tooltip.innerHTML = "Copy to clipboard";
     }
+}
+
+function saveCode(_e: any) {
+    window.localStorage.setItem("saved-code", editor.getModel()?.getValue() ?? "");
 }
 
 (window as any).$nab = (window as any).$nab ?? {};

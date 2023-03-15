@@ -13,6 +13,7 @@ button {
   padding: 1ch;
   color: #a4abb8;
   background-color: #353b46;
+  margin-left: 2ch;
 }
 button:hover {
   background-color: #454c59;
