@@ -84,6 +84,7 @@ export function parseSym(sym: string): Sym {
 export function createTokenStream(src: string) {
     let pos = 0;
     let line = 0;
+    let willBreakLine = false;
     let lineFirstChar = 0;
     let peeked: IteratorResult<TokenResult>|undefined = undefined;
 
@@ -104,9 +105,13 @@ export function createTokenStream(src: string) {
 
     function consumeChar() {
         pos++;
-        if (src[pos] === "\n") {
+        if (willBreakLine) {
             line++;
             lineFirstChar = pos + 1;
+            willBreakLine = false;
+        }
+        if (src[pos] === "\n") {
+            willBreakLine = true;
         }
     }
 
@@ -142,7 +147,6 @@ export function createTokenStream(src: string) {
         }
         const tokEnd = pos;
         const sym = src.substring(tokStart, tokEnd).toLowerCase();
-
         let res;
         if (sym === "dim" || sym === "as" || sym === "new" || sym === "not") {
             res = resFromTok({ kind: sym }, tokStart, tokEnd);

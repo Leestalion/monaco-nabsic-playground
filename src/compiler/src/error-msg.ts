@@ -1,4 +1,4 @@
-import { ParseError } from "./parse";
+import { ParseError, Span } from "./parse";
 import { symToString } from "./sym";
 import { TypingError } from "./typechecker";
 import { typeIdToString } from "./typing";
@@ -13,9 +13,9 @@ function reasonToString(err: ParseError): string {
         case "binary-op-miss-operand":
             return `operator ${err.op} miss a right operand`;
         case "expected-but-found":
-            return `expected ${err.expected.join(" or ")} but found some ${err.found.kind} token`;
+            return `expected ${err.expected.map(t=>`'${t}'`).join(" or ")} but found some '${err.found.kind}' token`;
         case "expected-but-found-expr":
-            return `expected ${err.expected.join(" or ")} but found some ${err.found.kind} token`;
+            return `expected ${err.expected.map(t=>`'${t}'`).join(" or ")} but found some '${err.found.kind}' expression`;
         case "expected-some":
             return `expected some ${err.msg}`;
         case "invalid-dim":
@@ -35,13 +35,17 @@ function reasonToString(err: ParseError): string {
     }
 }
 
+function spanToString(span: Span): string {
+    return `[${span.start.line+1}:${span.start.col+1}] to [${span.end.line+1}:${span.end.col+1}]`;
+}
+
 export function parseErrorToString(err: ParseError): string {
     const reason = reasonToString(err);
-    const { start, end } = err.span; 
-    return `error parsing line ${start.line+1} col ${start.col+1} to ${end.col+1}: ${reason}`;
+    return `error parsing ${spanToString(err.span)}: ${reason}`;
 }
 
 function typingErrorKindToString(err: TypingError): string {
+    err.expr.span
     switch (err.kind) {
         case "already-declared":
             return `a variable named ${symToString(err.sym)} has already been declared`;
@@ -59,5 +63,5 @@ function typingErrorKindToString(err: TypingError): string {
 }
 
 export function typingErrorToString(err: TypingError): string {
-    return typingErrorKindToString(err);
+    return `type error on ${spanToString(err.expr.span)}: ${typingErrorKindToString(err)}`;
 }

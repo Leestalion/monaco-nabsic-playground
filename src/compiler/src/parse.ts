@@ -155,7 +155,7 @@ export function createParser(tokens: TokenStream, stopOnFirstError: boolean, dec
             if (!tok || tok.kind !== ":") {
                 break;
             }
-            tokens.next();
+            tryNextToken();
             tok = expectNonNull(tryPeekToken(), "next seq expr");
             if (isSeparator(tok)) {
                 break;
@@ -173,10 +173,10 @@ export function createParser(tokens: TokenStream, stopOnFirstError: boolean, dec
         }
         while (typeof (tok = tryPeekToken()) !== "undefined") {
             if (tok.kind === endTokenKind) {
-                tokens.next();
+                tryNextToken();
                 break;
             } else if (tok.kind === ",") {
-                tokens.next();
+                tryNextToken();
                 sequences.push(parseSequence());
             } else {
                 signalError({ reason: "expected-but-found", expected: [endTokenKind, ",", ":"], found: tok });
@@ -204,7 +204,7 @@ export function createParser(tokens: TokenStream, stopOnFirstError: boolean, dec
     function tryParseType(): Type|undefined {
         const typeSym = expectNonNull(tryPeekToken(), "type sym");
         if (typeSym.kind !== "sym") { return undefined; }
-        tokens.next();
+        tryNextToken();
         const sym = typeSym.value;
         checkTypeKind(sym.kind);
         const params: Type[] = [];
@@ -213,7 +213,7 @@ export function createParser(tokens: TokenStream, stopOnFirstError: boolean, dec
         if (typeof nextTok !== "undefined") {
             if (nextTok.kind === "op" && nextTok.value === "+") {
                 nullable = false;
-                tokens.next();
+                tryNextToken();
                 nextTok = tryPeekToken();
             }
             if (typeof nextTok !== "undefined" && nextTok.kind === "op" && nextTok.value === "<") {
@@ -223,10 +223,10 @@ export function createParser(tokens: TokenStream, stopOnFirstError: boolean, dec
                     if (typeof param !== "undefined") {
                         params.push(param);
                     } else if (tok.kind === "op" && tok.value === ">") {
-                        tokens.next();
+                        tryNextToken();
                         break;
                     } else if (tok.kind === ",") {
-                        tokens.next();
+                        tryNextToken();
                         continue;
                     } else {
                         signalError({ reason: "expected-but-found", expected: ["op", ","], found: tok });
@@ -256,19 +256,19 @@ export function createParser(tokens: TokenStream, stopOnFirstError: boolean, dec
             signalError({ reason: "invalid-dim", token: varSym });
         }
         let nextTok = tryPeekToken();
-        if (nextTok && nextTok.kind === "as") { tokens.next() }
+        if (nextTok && nextTok.kind === "as") { tryNextToken() }
         nextTok = tryPeekToken();
         let expr: Expr|undefined = undefined;
         let cstr: Type|undefined;
         if (nextTok && nextTok.kind === "new") {
-            tokens.next();
+            tryNextToken();
             cstr = expectNonNull(tryParseType(), "initialization type");
             expr = exprWithSpan({ kind: "new", cstr, args: [] });
         } else {
             cstr = tryParseType();
             nextTok = tryPeekToken();
             if (nextTok && nextTok.kind === ":=") {
-                tokens.next();
+                tryNextToken();
                 expr = assertExpr(parseNextExpr(0), "expression to assign");
             }
         }
@@ -292,7 +292,7 @@ export function createParser(tokens: TokenStream, stopOnFirstError: boolean, dec
     }
 
     function parseLambda(params: FuncParameter[]): Expr {
-        tokens.next();
+        tryNextToken();
         let nextTok: Token|undefined = expectNonNull(tryNextToken(), "lambda body");
         if (nextTok.kind !== "(") {
             signalError({ reason: "expected-but-found", expected: ["("], found: nextTok });
@@ -345,7 +345,7 @@ export function createParser(tokens: TokenStream, stopOnFirstError: boolean, dec
         if (typeof nextTok === "undefined") {
             signalError({ reason: "unclosed", parens: "(" });
         } else if (nextTok.kind === ")") {
-            tokens.next();
+            tryNextToken();
             nextTok = expectNonNull(tryPeekToken(), "=> after empty parens");
             if (nextTok.kind === "=>") {
                 return parseLambda([]);
@@ -363,7 +363,7 @@ export function createParser(tokens: TokenStream, stopOnFirstError: boolean, dec
         } else if (nextTok.kind === ",") {
             return parseList(firstExpr);
         } else if (nextTok.kind === ")") {
-            tokens.next();
+            tryNextToken();
             nextTok = tryPeekToken();
             if (nextTok && nextTok.kind === "=>") {
                 return parseLambda(listToParamsList([firstExpr]));
@@ -376,9 +376,13 @@ export function createParser(tokens: TokenStream, stopOnFirstError: boolean, dec
     }
 
     function parseNextToken(previous: Expr|undefined, minBp: number): Expr|undefined {
-        const tok = tryPeekToken();
+        const tokres = tokens.peek();
+        if (!tokres.done) {
+            lastPlace = tokres.value.place;
+        }
+        const tok = tryToken(tokres);
         if (tok?.kind !== "op") {
-            tokens.next();
+            tryNextToken();
         }
         switch (tok?.kind) {
             case "str":
@@ -414,9 +418,6 @@ export function createParser(tokens: TokenStream, stopOnFirstError: boolean, dec
 
     function parseNextExpr(minBp: number): IteratorResult<Expr> {
         const tok = tokens.peek();
-        if (!tok.done) {
-            lastPlace = tok.value.place;
-        }
         let expr: Expr|undefined;
         do {
             expr = parseNextToken(undefined, minBp);
@@ -438,14 +439,14 @@ export function createParser(tokens: TokenStream, stopOnFirstError: boolean, dec
             } else if (nextTok.kind === "{") {
                 expr = exprWithSpan({ kind: "aggregate", expr, args: parseSequenceList("}") });
             } else if (nextTok.kind === ".") {
-                tokens.next();
+                tryNextToken();
                 const member = expectNonNull(tryNextToken(), "member");
                 if (member.kind !== "sym") {
                     signalError({ reason: "expected-but-found", expected: ["."], found: member })
                 }
                 expr = exprWithSpan({ kind: "access", object: expr, method: member.value });
             } else if (nextTok.kind === ":=") {
-                tokens.next();
+                tryNextToken();
                 expr = exprWithSpan({ kind: ":=", left: expr, right: assertExpr(parseNextExpr(0), "right part of :=") });
                 break;
             } else {

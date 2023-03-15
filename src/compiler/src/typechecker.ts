@@ -172,7 +172,7 @@ export function createTypeChecker(parser: Parser, permissive: boolean) {
         if (tCallee.kind === "var") {
             name = symToString(tCallee.sym);
         }
-        if (args.length !== tCallee.type.params.length - 1) {
+        if (tCallee.type.params.length > 0 && args.length !== tCallee.type.params.length - 1) {
             signalError({ expr, kind: "wrong-arity", name, expected: [tCallee.type.params.length - 1], got: args.length });
         } else {
             for (const [i, arg] of tArgs.entries()) {
