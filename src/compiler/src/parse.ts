@@ -417,7 +417,6 @@ export function createParser(tokens: TokenStream, stopOnFirstError: boolean, dec
     }
 
     function parseNextExpr(minBp: number): IteratorResult<Expr> {
-        const tok = tokens.peek();
         let expr: Expr|undefined;
         do {
             expr = parseNextToken(undefined, minBp);
