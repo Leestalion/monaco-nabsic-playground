@@ -3,8 +3,9 @@ import { DimExpr, Expr, FuncParameter, Parser, Span, Value } from "./parse.js";
 import { isGlobalBuiltIn, Sym, symEqual, symToString } from "./sym.js";
 import { BinaryOperator } from "./operator.js";
 import { createTypeRegistry } from "./typeregistry.js";
-import { BooleanType, CallableType, defineStandardTypes, NullType, NumberType, StringType, UnknownType } from "./def-std-types.js";
+import { BooleanType, CallableType, defineStandardTypes, NullType, NumberType, ObjectType, StringType, UnknownType } from "./def-std-types.js";
 import { defineStandardFunctions } from "./def-std-func.js";
+import { ArrayType } from "./def-std-types.js";
 import { defineWebAPI } from "./def-web-api.js";
 
 
@@ -155,6 +156,31 @@ export function createTypeChecker(parser: Parser, permissive: boolean) {
         return { type: args.at(-1)?.type ?? UnknownType, span: expr.span, kind: "call", expr, args };
     }
 
+    function inferArrayStatement(expr: TypedExpr, args: TypedExpr[]): TypedExpr {
+        let info: TypeInfo|undefined = undefined;
+        let nullable = false;
+        if (args.length === 0) {
+            nullable = true;
+            info = reg.typeInfo(ObjectType);
+        } else {
+            info = reg.typeInfo(args[0].type);
+            nullable = args[0].type.nullable;
+            for (let i = 1; i < args.length; i++) {
+                nullable = nullable && args[i].type.nullable;
+                const argType = reg.typeInfo(args[i].type);
+                if (typeof argType === "undefined") { break; }
+                info = info?.lastCommonAncestors(argType);
+            }
+        }
+        let type: Type;
+        if (info) {
+            type = { sym: info.id.sym, nullable, params: [] };
+        } else {
+            type = { sym: UnknownType.sym, nullable, params: [] };
+        }
+        return { type: { sym: ArrayType.sym, nullable: true, params: [type] }, span: expr.span, kind: "call", expr, args };
+    }
+
     function inferCallExpr(expr: Expr, callee: Expr, args: Expr[]): TypedExpr {
         const tArgs = args.map(inferType);
         const tCallee = inferType(callee);
@@ -164,6 +190,8 @@ export function createTypeChecker(parser: Parser, permissive: boolean) {
                     return inferIfStatement(tCallee, tArgs);
                 case "case":
                     return inferCaseStatement(tCallee, tArgs);
+                case "array":
+                    return inferArrayStatement(tCallee, tArgs);
                 default:
                     break;
             }

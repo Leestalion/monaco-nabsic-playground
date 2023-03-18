@@ -78,7 +78,6 @@ monaco.languages.registerCompletionItemProvider('nsharp', {
         const word = model.getWordUntilPosition(position);
         const prevWord = model.getWordUntilPosition({ lineNumber: position.lineNumber, column: position.column - 1 });
         const wordArraySuggestions = membersForVar(model.getValue(), prevWord.word);
-
         const range = {
             startLineNumber: position.lineNumber,
             endLineNumber: position.lineNumber,

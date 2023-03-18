@@ -24,7 +24,7 @@ export function javascriptFromBasic(input: string): string {
 }
 
 export function membersForVar(input: string, variable: string): string[] {
-    const varSym = parseSym(variable);
+    const varSym = parseSym(variable.toLowerCase());
     const tokens = createTokenStream(input);
     const parser = createParser(tokens, false, false);
     const checker = createTypeChecker(parser, true);

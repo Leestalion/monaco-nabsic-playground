@@ -7,6 +7,7 @@ export function createTypeRegistry() {
     const typesBySymbol = new Map<string, Type>();
     const typesByArgName = new Map<string, Type>();
     return {
+        typesBySymbol,
         typeInfo(id: TypeId): TypeInfo | undefined {
             return typeInfoById.get(typeIdToString(id, true));
         },

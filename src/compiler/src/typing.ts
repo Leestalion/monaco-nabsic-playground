@@ -90,6 +90,9 @@ export function createTypeInfo(name: string, id: TypeId, parent: TypeInfo|undefi
         },
         lastCommonAncestors(t: TypeInfo): TypeInfo|undefined {
             let ancestor: TypeInfo|undefined = undefined;
+            if (t.isSubtype(info.id)) {
+                return info;
+            }
             for (const parent of ancestorsById.values()) {
                 if (t.isSubtype(parent.id)) {
                     ancestor = { ...parent, id: { ...parent.id, nullable: parent.id.nullable && t.id.nullable } };
