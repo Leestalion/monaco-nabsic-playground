@@ -150,7 +150,7 @@ function createJavaScriptGenerator(parser: Iterator<Expr>) {
                 case "array": {
                     if (typeof expr.type === "undefined") { break; }
                     const params = JSON.stringify(expr.type.params.map(t => typeIdToString(t)));
-                    return `Object.assign($nab.BuiltIn[${JSON.stringify(symToString(expr.expr.sym))}](${expr.args.map(exprToJavaScript).join(",")}), {pTypes:${params}})`;
+                    return `Object.assign(new $nab.BuiltIn[${JSON.stringify(symToString(expr.expr.sym))}](${expr.args.map(exprToJavaScript).join(",")}), {pTypes:${params}})`;
                 }
             }
             return `$nab.BuiltIn[${JSON.stringify(symToString(expr.expr.sym))}](${expr.args.map(exprToJavaScript).join(",")})`;

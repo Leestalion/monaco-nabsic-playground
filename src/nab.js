@@ -165,46 +165,52 @@
     
     $nab.BuiltIn.len = s => s.length;
     $nab.BuiltIn.stringisnullorempty = s => s == null || $nab.BuiltIn.len(s) === 0;
-    $nab.BuiltIn.array = function NabArray(...args) {
-        const self = Object.create($nab.BuiltIn.array.prototype);
-        self.pElements = args ?? [];
-        self.pTypes = ["Object"];
-        return self;
-    };
-    $nab.BuiltIn.array.prototype = {
-        constructor: $nab.BuiltIn.array,
-        gettypename() { return `Array<${this.pTypes}>`; },
+    $nab.BuiltIn.array = class Array {
+        constructor(...args) {
+            this.pElements = args ?? [];
+            this.pTypes = ["Object"];
+        }
+
+        gettypename() { return `Array<${this.pTypes}>`; }
+
         get(i) {
             return this.pElements[i - 1];
-        },
+        }
+
         set(i, e) {
             this.pElements[i - 1] = e;
-        },
+        }
+
         append(e) {
             this.pElements.push(e);
-        },
+        }
+
         size() {
             return this.pElements.length;
-        },
+        }
+
         *entries() {
             for (const [i, e] of this.pElements.entries()) {
                 yield [i+1, e];
             }
-        },
+        }
+
         select(lambda) {
             const res = new $nab.BuiltIn.array();
             for (const v of this.pElements) {
                 res.append(lambda.invoke(v));
             }
             return res;
-        },
+        }
+
         todictionary(kLambda, vLambda) {
             const res = new $nab.BuiltIn.dictionary();
             for (const v of this.pElements) {
                 res.set(kLambda.invoke(v), vLambda.invoke(v));
             }
             return res;
-        },
+        }
+
         where(lambda) {
             const res = new $nab.BuiltIn.array();
             for (const e of this.pElements) {
@@ -213,16 +219,19 @@
                 }
             }
             return res;
-        },
+        }
+
         join(sep) {
             return this.pElements.join(sep);
-        },
+        }
+
         tostring() {
             return this.join("|");
-        },
+        }
+
         tojson() {
             return JSON.stringify(this.pElements);
-        },
+        }
     };
     $nab.BuiltIn.keyvaluepair = class KeyValuePair {
         #key
