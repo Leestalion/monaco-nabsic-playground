@@ -1,7 +1,7 @@
 import { BinaryOperator } from "./operator.js";
 import { DimExpr, Expr, FuncParameter, Value } from "./parse.js";
 import { isGlobalBuiltIn, Sym, symToString } from "./sym.js";
-import { Type, isBuiltinType } from "./typing.js";
+import { Type, isBuiltinType, typeIdToString } from "./typing.js";
 
 
 function createJavaScriptGenerator(parser: Iterator<Expr>) {
@@ -85,13 +85,17 @@ function createJavaScriptGenerator(parser: Iterator<Expr>) {
         const args = `${expr.args.map(exprToJavaScript).join(",")}`;
         const typeStr = JSON.stringify(symToString(expr.cstr.sym));
         if (isBuiltinType(expr.cstr)) {
+            if (expr.cstr.params.length > 0) {
+                const params = JSON.stringify(expr.cstr.params.map(t => typeIdToString(t)));
+                return `Object.assign(new $nab.BuiltIn[${typeStr}](${args}), {pTypes:${params}})`
+            }
             return `new $nab.BuiltIn[${typeStr}](${args})`
         } else {
             return `new $nab.CustomTypes[${typeStr}](${args})`
         }
     }
     
-    function generateCallExpr(expr: { kind: "call", expr: Expr, args: Expr[] }): string {
+    function generateCallExpr(expr: { type?: Type, kind: "call", expr: Expr, args: Expr[] }): string {
         if (expr.expr.kind === "var" && isGlobalBuiltIn(expr.expr.sym)) {
             switch (expr.expr.sym.name) {
                 case "if": {
@@ -142,6 +146,11 @@ function createJavaScriptGenerator(parser: Iterator<Expr>) {
                     const tryBody = exprToJavaScript(expr.args[0]);
                     const exceptBody = exprToJavaScript(expr.args[1]);
                     return `(() => { var $catch; try { $catch = ${tryBody}; } catch (__errmsg__) { if (__errmsg__ instanceof $nab.BuiltIn.string) { $catch = ${exceptBody}; } else { throw __errmsg__; } } return $catch; })()`;
+                }
+                case "array": {
+                    if (typeof expr.type === "undefined") { break; }
+                    const params = JSON.stringify(expr.type.params.map(t => typeIdToString(t)));
+                    return `Object.assign($nab.BuiltIn[${JSON.stringify(symToString(expr.expr.sym))}](${expr.args.map(exprToJavaScript).join(",")}), {pTypes:${params}})`;
                 }
             }
             return `$nab.BuiltIn[${JSON.stringify(symToString(expr.expr.sym))}](${expr.args.map(exprToJavaScript).join(",")})`;

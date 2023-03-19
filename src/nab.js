@@ -91,6 +91,7 @@
         },
     });
     $nab.getTypeName = (obj) => {
+        console.log("obj", obj, typeof obj);
         switch (typeof obj) {
             case "number":
                 return "Number";
@@ -167,10 +168,12 @@
     $nab.BuiltIn.array = function NabArray(...args) {
         const self = Object.create($nab.BuiltIn.array.prototype);
         self.pElements = args ?? [];
+        self.pTypes = ["Object"];
         return self;
     };
     $nab.BuiltIn.array.prototype = {
         constructor: $nab.BuiltIn.array,
+        gettypename() { return `Array<${this.pTypes}>`; },
         get(i) {
             return this.pElements[i - 1];
         },
@@ -228,18 +231,19 @@
             this.#key = key;
             this.#value = value;
         }
-        gettypename() { return "KeyValuePair"; }
+        gettypename() { return `KeyValuePair<${this.pTypes.join(", ")}>`; }
         key() { return this.#key }
         value() { return this.#value }
     };
     $nab.BuiltIn.dictionary = class Dictionary {
-        #m
+        #m; pTypes;
         constructor() {
             this.#m = new Map();
+            this.pTypes = [];
             return this;
         }
 
-        gettypename() { return "Dictionary"; }
+        gettypename() { return `Dictionary<${this.pTypes.join(", ")}>`; }
 
         get(k) {
             return this.#m.get(k);
@@ -298,7 +302,7 @@
         }
     };
     $nab.BuiltIn.cache = class extends $nab.BuiltIn.dictionary {
-        gettypename() { return "Cache"; }
+        gettypename() { return `Cache<${this.pTypes.join(", ")}>`; }
     }
 
     $nab.BuiltIn.string = class NabString {
