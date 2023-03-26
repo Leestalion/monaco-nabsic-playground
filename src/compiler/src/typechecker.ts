@@ -1,4 +1,4 @@
-import { builtInType, Method, nullableType, Type, typeEquals, TypeInfo } from "./typing.js";
+import { builtInType, Method, nullableType, ParamType, Type, typeEquals, TypeInfo } from "./typing.js";
 import { DimExpr, Expr, FuncParameter, Parser, Span, Value } from "./parse.js";
 import { isGlobalBuiltIn, Sym, symEqual, symToString } from "./sym.js";
 import { BinaryOperator } from "./operator.js";
@@ -36,17 +36,22 @@ export type TypingError = { expr: Expr } & (
     { kind: "wrong-arity", name: string, expected: number[], got: number } |
     { kind: "already-declared", sym: Sym });
 
-function resolveMethodParams(type: Type, typeParams: (Type|number|[number, number])[]): Type[] {
+function resolveMethodParams(concreteTypes: Type[], methodParams: ParamType[]): Type[] {
     const result: Type[] = [];
-    for (const typeParam of typeParams) {
-        if (typeof typeParam === "number") {
-            result.push(type.params.at(typeParam) ?? UnknownType);
-        } else if (Array.isArray(typeParam)) {
-            let [start, end] = typeParam;
-            const params = type.params.slice(start, end);
+    for (const methodParam of methodParams) {
+        if (typeof methodParam === "number") {
+            result.push(concreteTypes.at(methodParam) ?? UnknownType);
+        } else if (Array.isArray(methodParam)) {
+            let [start, end] = methodParam;
+            const params = concreteTypes.slice(start, end);
             result.push(...params);
-        } else {
-            result.push(typeParam);
+        } else if ("vararg" in methodParam) {
+            const varArgLength = concreteTypes.length - (methodParams.length - 1);
+            for (var i = 0; i < varArgLength; i++) {
+                result.push(methodParam.vararg);
+            }
+        } else if ("sym" in methodParam) {
+            result.push(methodParam);
         }
     }
     return result;
@@ -61,6 +66,8 @@ function lookupType(type: Type, typeParam: Type|number|"this"): Type {
     }
     return typeParam;
 }
+
+function unreachable(_: never): never { throw "unreachable"; }
 
 function inferLitType(expr: Expr, value: Value): TypedExpr {
     let type = builtInType("unknown", false);
@@ -224,17 +231,28 @@ export function createTypeChecker(parser: Parser, permissive: boolean) {
         const tLeft = inferType(left);
         const tRight = inferType(right);
         const nullable = tLeft.type.nullable || tRight.type.nullable;
-        let type = builtInType("boolean", nullable);
+        let type: Type;
         if (op === "&") {
             assertSubtype(expr, tLeft.type, StringType);
             type = builtInType("string", nullable);
-        } else if (op === "+" || op === "-" || op === "*" || op === "/" || op === "^") {
+        } else if (op === "+" || op === "-" || op === "*" || op === "/" || op === "^" || op === "bitand" || op === "bitor") {
             assertSubtype(expr, tLeft.type, NumberType);
             assertSubtype(expr, tRight.type, NumberType);
             type = builtInType("number", nullable);
         } else if (op === "<" || op === "<=" || op === ">" || op === ">=") {
             assertSubtype(expr, tLeft.type, NumberType);
             assertSubtype(expr, tRight.type, NumberType);
+            type = builtInType("boolean", nullable);
+        } else if (op === "and" || op === "andalso" || op === "or" || op === "orelse") {
+            assertSubtype(expr, tLeft.type, BooleanType);
+            assertSubtype(expr, tRight.type, BooleanType);
+            type = builtInType("boolean", nullable);
+        } else if (op === "in") {
+            type = builtInType("boolean", nullable);
+        } else if (op === "=" || op === "<>") {
+            type = builtInType("boolean", nullable);
+        } else {
+            unreachable(op);
         }
         return { type, span: expr.span, kind: "op", op, left: tLeft, right: tRight };
     }
@@ -252,7 +270,7 @@ export function createTypeChecker(parser: Parser, permissive: boolean) {
             }
             if (typeof member !== "undefined") {
                 type = builtInType("callable", false, [
-                    ...resolveMethodParams(tObject.type, member.params), 
+                    ...resolveMethodParams(tObject.type.params, member.params), 
                     lookupType(tObject.type, member.ret)]);
             } else {
                 signalError({ expr, kind: "unknown-member", sym: method, of: tObject.type });
