@@ -238,6 +238,7 @@ function saveCode(_e: any) {
 
 function exec() {
     const input = editor.getModel()?.getValue() ?? "";
+    err.value = "";
     try {
         const built = javascriptFromBasic(input);
         eval(built);
