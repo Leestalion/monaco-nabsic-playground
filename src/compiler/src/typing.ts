@@ -50,7 +50,8 @@ export function typeIdToString(id: TypeId, nullInsensitive = false): string {
     return `${symToString(id.sym)}${nullable}`;
 }
 
-export type ParamType = Type|number|[number, number]|{vararg: Type};
+export type ParamType = AbstractType|number|[number, number]|{vararg: AbstractType};
+export type AbstractType = TypeId & { params: ParamType[] };
 
 export type Method = {
     name: string,

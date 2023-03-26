@@ -16,6 +16,7 @@ export const StringType = builtInType("string", true);
 export const StringNotNull = builtInType("string");
 export const BufferType = builtInType("buffer", true);
 export const ArrayType = builtInType("array", true);
+export const KeyValuePair = builtInType("keyvaluepair", true);
 export const DictType = builtInType("dictionary", true);
 export const CacheType = builtInType("cache", true);
 export const FuncType = builtInType("func", true);
@@ -26,10 +27,28 @@ export function defineStandardTypes(reg: TypeRegistry) {
         { name: "GetTypeName", params: [], ret: StringType },
         { name: "SerializeToJson", params: [], ret: StringType },
     ]));
+    reg.registerTypeInfo(createTypeInfo("KeyValuePair", KeyValuePair, ObjectTypeInfo, [
+        { name: "Key", params: [], ret: 0 },
+        { name: "Value", params: [], ret: 1 },
+    ]));
     const DictTypeInfo = reg.registerTypeInfo(createTypeInfo("Dictionary", DictType, ObjectTypeInfo, [
         { name: "Count", params: [], ret: NumberNotNull },
         { name: "Get", params: [0], ret: 1 },
         { name: "Set", params: [0, 1], ret: NullType },
+        { name: "Select",
+            params: [{ 
+                sym: builtInSym("func"), nullable: true, 
+                params: [{ sym: KeyValuePair.sym, nullable: true, params: [0, 1] }, ObjectType]
+            }],
+            ret: ArrayType
+        },
+        { name: "Where",
+            params: [{ 
+                sym: builtInSym("func"), nullable: true, 
+                params: [{ sym: KeyValuePair.sym, nullable: true, params: [0, 1] }, BooleanNotNull]
+            }],
+            ret: "this"
+        },
     ]));
     reg.registerTypeInfo(createTypeInfo("Null", NullType, ObjectTypeInfo, []));
     reg.registerTypeInfo(createTypeInfo("Boolean", BooleanType, ObjectTypeInfo, []));
@@ -63,8 +82,8 @@ export function defineStandardTypes(reg: TypeRegistry) {
         { name: "Get", params: [NumberType], ret: 0 },
         { name: "Set", params: [NumberType, 0], ret: NullType },
         { name: "Append", params: [0], ret: NullType },
-        { name: "Select", params: [{ sym: builtInSym("func"), nullable: true, params: [ObjectType, ObjectType] }], ret: ArrayType },
-        { name: "Where", params: [{ sym: builtInSym("func"), nullable: true, params: [ObjectType, BooleanNotNull] }], ret: "this" },
+        { name: "Select", params: [{ sym: builtInSym("func"), nullable: true, params: [0, ObjectType] }], ret: ArrayType },
+        { name: "Where", params: [{ sym: builtInSym("func"), nullable: true, params: [0, BooleanNotNull] }], ret: "this" },
     ]));
     reg.registerTypeInfo(createTypeInfo("Cache", CacheType, DictTypeInfo, []));
     reg.registerTypeInfo(createTypeInfo("Func", FuncType, ObjectTypeInfo, [

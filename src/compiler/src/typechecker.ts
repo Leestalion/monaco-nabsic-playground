@@ -1,4 +1,4 @@
-import { builtInType, Method, nullableType, ParamType, Type, typeEquals, TypeInfo } from "./typing.js";
+import { AbstractType, builtInType, Method, nullableType, ParamType, Type, typeEquals, TypeInfo } from "./typing.js";
 import { DimExpr, Expr, FuncParameter, Parser, Span, Value } from "./parse.js";
 import { isGlobalBuiltIn, Sym, symEqual, symToString } from "./sym.js";
 import { BinaryOperator } from "./operator.js";
@@ -36,6 +36,10 @@ export type TypingError = { expr: Expr } & (
     { kind: "wrong-arity", name: string, expected: number[], got: number } |
     { kind: "already-declared", sym: Sym });
 
+function concretizeType(concreteTypes: Type[], type: AbstractType): Type {
+    return { sym: type.sym, nullable: type.nullable, params: resolveMethodParams(concreteTypes, type.params) }
+}
+
 function resolveMethodParams(concreteTypes: Type[], methodParams: ParamType[]): Type[] {
     const result: Type[] = [];
     for (const methodParam of methodParams) {
@@ -48,10 +52,10 @@ function resolveMethodParams(concreteTypes: Type[], methodParams: ParamType[]): 
         } else if ("vararg" in methodParam) {
             const varArgLength = concreteTypes.length - (methodParams.length - 1);
             for (var i = 0; i < varArgLength; i++) {
-                result.push(methodParam.vararg);
+                result.push(concretizeType(concreteTypes, methodParam.vararg));
             }
         } else if ("sym" in methodParam) {
-            result.push(methodParam);
+            result.push(concretizeType(concreteTypes, methodParam));
         }
     }
     return result;
@@ -92,7 +96,10 @@ export function createTypeChecker(parser: Parser, permissive: boolean) {
         errors.push(err);
     }
 
-    function assertSubtype(expr: Expr, sub: Type, type: Type) {
+    function assertSubtype(expr: Expr, sub: Type, type: Type|undefined) {
+        if (typeof type === "undefined") {
+            return;
+        }
         if (permissive && typeEquals(sub, UnknownType)) {
             return;
         }
@@ -106,7 +113,7 @@ export function createTypeChecker(parser: Parser, permissive: boolean) {
     }
 
     function inferSeqExpr(expr: Expr, seq: Expr[]): TypedExpr {
-        const typedExprSeq = seq.map(inferType);
+        const typedExprSeq = seq.map(expr => inferType(expr));
         return { 
             type: typedExprSeq.at(-1)?.type ?? builtInType("unknown"), span: expr.span, kind: "seq", 
             exprs: typedExprSeq
@@ -136,7 +143,7 @@ export function createTypeChecker(parser: Parser, permissive: boolean) {
     }
 
     function inferNewExpr(expr: Expr, cstr: Type, args: Expr[]): TypedExpr {
-        return { type: cstr, span: expr.span, kind: "new", cstr, args: args.map(inferType) };
+        return { type: cstr, span: expr.span, kind: "new", cstr, args: args.map(arg => inferType(arg)) };
     }
 
     function inferIfStatement(expr: TypedExpr, args: TypedExpr[]): TypedExpr {
@@ -189,8 +196,8 @@ export function createTypeChecker(parser: Parser, permissive: boolean) {
     }
 
     function inferCallExpr(expr: Expr, callee: Expr, args: Expr[]): TypedExpr {
-        const tArgs = args.map(inferType);
         const tCallee = inferType(callee);
+        const tArgs = args.map((arg, i) => inferType(arg, tCallee.type.params[i]));
         if (callee.kind === "var" && isGlobalBuiltIn(callee.sym)) {
             switch (callee.sym.name) {
                 case "if":
@@ -279,10 +286,10 @@ export function createTypeChecker(parser: Parser, permissive: boolean) {
         return { type, span: expr.span, kind: "access", object: tObject, method };
     }
 
-    function inferLambdaExpr(expr: Expr, params: FuncParameter[], body: Expr): TypedExpr {
+    function inferLambdaExpr(expr: Expr, params: FuncParameter[], body: Expr, targetType: Type): TypedExpr {
         const tParams = [];
-        for (const param of params) {
-            const type = param.type ?? UnknownType;
+        for (const [i, param] of params.entries()) {
+            const type = param.type ?? targetType.params[i] ?? UnknownType;
             reg.setSymType({ kind: "@", name: param.name }, type);
             tParams.push(type);
         }
@@ -294,7 +301,7 @@ export function createTypeChecker(parser: Parser, permissive: boolean) {
         };
     }
 
-    function inferType(expr: Expr): TypedExpr {
+    function inferType(expr: Expr, targetType: Type = UnknownType): TypedExpr {
         switch (expr.kind) {
             case "lit":
                 return inferLitType(expr, expr.value);
@@ -327,7 +334,7 @@ export function createTypeChecker(parser: Parser, permissive: boolean) {
             case "access":
                 return inferAccessExpr(expr, expr.object, expr.method);
             case "lambda":
-                return inferLambdaExpr(expr, expr.params, expr.body);
+                return inferLambdaExpr(expr, expr.params, expr.body, targetType);
         }
         return { type: builtInType("unknown"), ...expr } as TypedExpr;
     }
