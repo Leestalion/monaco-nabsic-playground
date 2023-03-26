@@ -255,10 +255,16 @@
         gettypename() { return `Dictionary<${this.pTypes.join(", ")}>`; }
 
         get(k) {
+            if (typeof k !== "number") {
+                k = k.tostring();
+            }
             return this.#m.get(k);
         }
 
         set(k, v) {
+            if (typeof k !== "number") {
+                k = k.tostring();
+            }
             this.#m.set(k, v);
         }
 
@@ -322,6 +328,7 @@
         gettypename() { return "String"; }
         [Symbol.toPrimitive]() { return this.#s; }
         toString() { return this.#s; }
+        tostring() { return this.#s; }
         equals(s) { return (typeof s === "string" || s instanceof NabString) && this.toString() === s.toString(); }
         toupper() { return new $nab.BuiltIn.string(this.#s.toUpperCase()); }
         toupperinvariant() { return new $nab.BuiltIn.string(this.#s.toUpperCase()); }
