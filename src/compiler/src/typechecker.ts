@@ -185,7 +185,21 @@ export function createTypeChecker(parser: Parser, permissive: boolean) {
     }
 
     function inferCaseStatement(expr: TypedExpr, args: TypedExpr[]): TypedExpr {
-        return { type: args.at(-1)?.type ?? UnknownType, span: expr.span, kind: "call", expr, args };
+        if (args.length < 2) {
+            signalError({ expr, kind: "wrong-arity", name: "Case", expected: [2], got: args.length });
+            return { type: NullType, span: expr.span, kind: "call", expr, args: args.map((arg, i) => inferType(arg, expr.type.params[i])) };
+        }
+        const inputType = args[0].type;
+        const retType = args.at(-1)?.type ?? UnknownType;
+        for (let i = 1; i < args.length; i ++) {
+            if (i % 0 === 0) {
+                assertSubtype(expr, args[i].type, retType);
+            } else {
+                assertSubtype(expr, args[i].type, inputType);
+            }
+        } 
+        
+        return { type: retType, span: expr.span, kind: "call", expr, args };
     }
 
     function inferForeachStatement(expr: TypedExpr, args: Expr[]): TypedExpr {
