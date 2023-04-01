@@ -199,14 +199,12 @@ export function createTypeChecker(parser: Parser, permissive: boolean) {
         const oldKeyType = reg.symType(keySym) ?? UnknownType;
         const oldValType = reg.symType(valSym) ?? UnknownType;
         if (isGlobalBuiltIn(iterable.type.sym) && iterable.type.sym.name === "array") {
-            console.log("infering array foreach");
             reg.setSymType(keySym, NumberNotNull);
             reg.setSymType(valSym, iterable.type.params[0]);
         } else if (
             isGlobalBuiltIn(iterable.type.sym) && 
             (iterable.type.sym.name === "dictionary" || iterable.type.sym.name === "cache")
         ) {
-            console.log("infering dict foreach");
             reg.setSymType(keySym, iterable.type.params[0]);
             reg.setSymType(valSym, iterable.type.params[1]);
         } else {
@@ -272,9 +270,6 @@ export function createTypeChecker(parser: Parser, permissive: boolean) {
             signalError({ expr, kind: "wrong-arity", name, expected: [tCallee.type.params.length - 1], got: args.length });
         } else {
             for (const [i, arg] of tArgs.entries()) {
-                if (!reg.isSubtype(arg.type, tCallee.type.params[i])) {
-                    console.log("not subtype", arg, arg.type, tCallee.type.params[i]);
-                }
                 assertSubtype(tExpr, arg.type, tCallee.type.params[i]);
             }
         }
