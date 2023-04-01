@@ -1,7 +1,7 @@
 import { ParseError, Span } from "./parse";
 import { symToString } from "./sym";
 import { TypingError } from "./typechecker";
-import { typeIdToString } from "./typing";
+import { typeIdToString, typeToString } from "./typing";
 
 
 function reasonToString(err: ParseError): string {
@@ -50,7 +50,9 @@ function typingErrorKindToString(err: TypingError): string {
         case "already-declared":
             return `a variable named ${symToString(err.sym)} has already been declared`;
         case "not-subtype":
-            return `expected type ${typeIdToString(err.of)} but got ${typeIdToString(err.type)}`;
+            return `expected type ${typeToString(err.of)} but got ${typeToString(err.type)}`;
+        case "not-callable":
+            return `expression of type ${typeToString(err.type)} cannot be called`;
         case "unknown-function":
             return `there is no function called ${symToString(err.sym)}`;
         case "unknown-member":

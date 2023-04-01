@@ -250,6 +250,8 @@ function exec() {
         errConsole.classList.remove("hidden");
         if (typeof e === "string") {
             err.value = e;
+        } else {
+            throw e;
         }
     }
 }

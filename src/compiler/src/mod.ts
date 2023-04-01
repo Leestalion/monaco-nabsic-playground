@@ -3,12 +3,13 @@ import { generateJavaScript } from "./generatejs.js";
 import { createParser } from "./parse.js";
 import { createTokenStream, parseSym } from "./tokenize.js";
 import { createTypeChecker } from "./typechecker.js";
+import { AbstractTypeInfo } from "./typing.js";
 
 
 export function javascriptFromBasic(input: string): string {
     const tokens = createTokenStream(input);
     const parser = createParser(tokens, false, false);
-    const checker = createTypeChecker(parser, true);
+    const checker = createTypeChecker(parser, false);
     const output = generateJavaScript(checker);
     if (parser.errors.length > 0 || checker.errors.length > 0) {
         let errmsg = "";
@@ -31,7 +32,7 @@ export function membersForVar(input: string, variable: string): string[] {
     for (const _ of checker) {}
     const varType = checker.reg.symType(varSym);
     if (typeof varType === "undefined") return [];
-    let typeInfo = checker.reg.typeInfo(varType);
+    let typeInfo: AbstractTypeInfo|undefined = checker.reg.typeInfo(varType);
     const methods = [];
     while (typeof typeInfo !== "undefined") {
         for (const m of typeInfo.methods.values()) {

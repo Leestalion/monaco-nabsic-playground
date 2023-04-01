@@ -22,16 +22,16 @@ export const CacheType = builtInType("cache", true);
 export const FuncType = builtInType("func", true);
 
 export function defineStandardTypes(reg: TypeRegistry) {
-    const UnknownTypeInfo = reg.registerTypeInfo(createTypeInfo("<unknown>", UnknownType, undefined, []));
-    const ObjectTypeInfo = reg.registerTypeInfo(createTypeInfo("Object", ObjectType, UnknownTypeInfo, [
+    const UnknownTypeInfo = reg.registerTypeInfo(createTypeInfo("<unknown>", UnknownType, undefined, [], []));
+    const ObjectTypeInfo = reg.registerTypeInfo(createTypeInfo("Object", ObjectType, UnknownTypeInfo, [], [
         { name: "GetTypeName", params: [], ret: StringType },
         { name: "SerializeToJson", params: [], ret: StringType },
     ]));
-    reg.registerTypeInfo(createTypeInfo("KeyValuePair", KeyValuePair, ObjectTypeInfo, [
+    reg.registerTypeInfo(createTypeInfo("KeyValuePair", KeyValuePair, ObjectTypeInfo, [ObjectType, ObjectType], [
         { name: "Key", params: [], ret: 0 },
         { name: "Value", params: [], ret: 1 },
     ]));
-    const DictTypeInfo = reg.registerTypeInfo(createTypeInfo("Dictionary", DictType, ObjectTypeInfo, [
+    const DictTypeInfo = reg.registerTypeInfo(createTypeInfo("Dictionary", DictType, ObjectTypeInfo, [ObjectType, ObjectType], [
         { name: "New", params: [], ret: NullType },
         { name: "Count", params: [], ret: NumberNotNull },
         { name: "Get", params: [0], ret: 1 },
@@ -51,11 +51,11 @@ export function defineStandardTypes(reg: TypeRegistry) {
             ret: "this"
         },
     ]));
-    reg.registerTypeInfo(createTypeInfo("Null", NullType, ObjectTypeInfo, []));
-    reg.registerTypeInfo(createTypeInfo("Boolean", BooleanType, ObjectTypeInfo, []));
-    reg.registerTypeInfo(createTypeInfo("Number", NumberType, ObjectTypeInfo, []));
-    reg.registerTypeInfo(createTypeInfo("Number", NumberType, ObjectTypeInfo, []));
-    reg.registerTypeInfo(createTypeInfo("String", StringType, ObjectTypeInfo, [
+    reg.registerTypeInfo(createTypeInfo("Null", NullType, ObjectTypeInfo, [], []));
+    reg.registerTypeInfo(createTypeInfo("Boolean", BooleanType, ObjectTypeInfo, [],  []));
+    reg.registerTypeInfo(createTypeInfo("Number", NumberType, ObjectTypeInfo, [], []));
+    reg.registerTypeInfo(createTypeInfo("Number", NumberType, ObjectTypeInfo, [], []));
+    reg.registerTypeInfo(createTypeInfo("String", StringType, ObjectTypeInfo, [], [
         { name: "ToUpper", params: [], ret: StringType },
         { name: "ToUpperInvariant", params: [], ret: StringType },
         { name: "ToLower", params: [], ret: StringType },
@@ -75,10 +75,10 @@ export function defineStandardTypes(reg: TypeRegistry) {
         { name: "Split", params: [StringType], ret: { ...ArrayType, params: [StringType] } },
         { name: "Replace", params: [StringType, StringType], ret: StringType },
     ]));
-    reg.registerTypeInfo(createTypeInfo("Buffer", BufferType, ObjectTypeInfo, [
+    reg.registerTypeInfo(createTypeInfo("Buffer", BufferType, ObjectTypeInfo, [], [
         { name: "GetValue", params: [], ret: StringType },
     ]));
-    reg.registerTypeInfo(createTypeInfo("Array", ArrayType, ObjectTypeInfo, [
+    reg.registerTypeInfo(createTypeInfo("Array", ArrayType, ObjectTypeInfo, [ObjectType], [
         { name: "New", params: [{ vararg: 0 }], ret: NullType },
         { name: "Size", params: [], ret: NumberNotNull },
         { name: "Get", params: [NumberType], ret: 0 },
@@ -87,8 +87,8 @@ export function defineStandardTypes(reg: TypeRegistry) {
         { name: "Select", params: [{ sym: builtInSym("func"), nullable: true, params: [0, ObjectType] }], ret: ArrayType },
         { name: "Where", params: [{ sym: builtInSym("func"), nullable: true, params: [0, BooleanNotNull] }], ret: "this" },
     ]));
-    reg.registerTypeInfo(createTypeInfo("Cache", CacheType, DictTypeInfo, []));
-    reg.registerTypeInfo(createTypeInfo("Func", FuncType, ObjectTypeInfo, [
+    reg.registerTypeInfo(createTypeInfo("Cache", CacheType, DictTypeInfo, [0, 1], []));
+    reg.registerTypeInfo(createTypeInfo("Func", FuncType, ObjectTypeInfo, [{ vararg: ObjectType }], [
         { name: "Invoke", params: [[0, -1]], ret: -1 },
     ]));
 }

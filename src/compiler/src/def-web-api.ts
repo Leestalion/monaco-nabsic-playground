@@ -28,29 +28,29 @@ export function defineWebAPI(reg: TypeRegistry) {
     reg.setSymType(builtInSym("query"), callableType([StringNotNull], { 
         sym: ArrayType.sym, nullable: false, params: [ElementType]
     }));
-    reg.registerTypeInfo(createTypeInfo("Event", EventType, ObjectTypeInfo, [
+    reg.registerTypeInfo(createTypeInfo("Event", EventType, ObjectTypeInfo, [], [
         { name: "StopPropagation", params: [], ret: NullType },
         { name: "Code", params: [], ret: StringNotNull },
     ]));
-    reg.registerTypeInfo(createTypeInfo("Color", ColorType, ObjectTypeInfo, [
+    reg.registerTypeInfo(createTypeInfo("Color", ColorType, ObjectTypeInfo, [], [
         { name: "New", params: [NumberNotNull, NumberNotNull, NumberNotNull], ret: NullType },
         { name: "R", params: [], ret: NumberNotNull },
         { name: "G", params: [], ret: NumberNotNull },
         { name: "B", params: [], ret: NumberNotNull },
     ]));
-    const ListenableTypeInfo = reg.registerTypeInfo(createTypeInfo("Listenable", ListenableType, ObjectTypeInfo, [
+    const ListenableTypeInfo = reg.registerTypeInfo(createTypeInfo("Listenable", ListenableType, ObjectTypeInfo, [], [
         {
             name: "On", 
             params: [StringNotNull, { sym: builtInSym("func"), nullable: true, params: [ListenableType, NullType] }], 
             ret: NullType
         },
     ]));
-    const ElementTypeInfo = reg.registerTypeInfo(createTypeInfo("Element", ElementType, ListenableTypeInfo, [
+    const ElementTypeInfo = reg.registerTypeInfo(createTypeInfo("Element", ElementType, ListenableTypeInfo, [], [
         { name: "CreateChild", params: [StringType], ret: ElementType },
         { name: "SetStyle", params: [StringType, ObjectType], ret: ElementType },
         { name: "SetText", params: [StringType], ret: ElementType },
     ]));
-    reg.registerTypeInfo(createTypeInfo("Canvas", CanvasType, ElementTypeInfo, [
+    reg.registerTypeInfo(createTypeInfo("Canvas", CanvasType, ElementTypeInfo, [], [
         { name: "New", params: [ElementType], ret: NullType },
         { name: "Resize", params: [NumberNotNull, NumberNotNull], ret: CanvasType },
         { name: "Clear", params: [ColorType], ret: CanvasType },
@@ -58,7 +58,7 @@ export function defineWebAPI(reg: TypeRegistry) {
         { name: "DrawRect", params: [NumberNotNull, NumberNotNull, NumberNotNull, NumberNotNull], ret: CanvasType },
         { name: "Repaint", params: [], ret: CanvasType },
     ]));
-    reg.registerTypeInfo(createTypeInfo("Window", WindowType, ListenableTypeInfo, [
+    reg.registerTypeInfo(createTypeInfo("Window", WindowType, ListenableTypeInfo, [], [
         {
             name: "EachFrame", 
             params: [

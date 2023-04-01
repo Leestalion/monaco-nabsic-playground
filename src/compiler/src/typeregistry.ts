@@ -1,17 +1,22 @@
 import { Sym, symToString } from "./sym.js";
-import { Type, TypeId, typeIdToString, TypeInfo } from "./typing.js";
+import { Type, TypeInfo, typeIdToString, AbstractTypeInfo, typeIdEquals, typeParamsEqual } from "./typing.js";
 
 
 export function createTypeRegistry() {
-    const typeInfoById = new Map<string, TypeInfo>();
+    const typeInfoById = new Map<string, AbstractTypeInfo>();
     const typesBySymbol = new Map<string, Type>();
     const typesByArgName = new Map<string, Type>();
-    return {
+    const reg = {
         typesBySymbol,
-        typeInfo(id: TypeId): TypeInfo | undefined {
-            return typeInfoById.get(typeIdToString(id, true));
+        typeInfo(id: Type): TypeInfo | undefined {
+            const abstractInfo = typeInfoById.get(typeIdToString(id, true));
+            if (abstractInfo) {
+                return { ...abstractInfo, args: id.params };
+            } else {
+                return undefined;
+            }
         },
-        registerTypeInfo(info: TypeInfo) {
+        registerTypeInfo(info: AbstractTypeInfo) {
             typeInfoById.set(typeIdToString(info.id, true), info);
             return info;
         },
@@ -26,8 +31,17 @@ export function createTypeRegistry() {
         },
         setArgType(name: string, type: Type) {
             typesByArgName.set(name, type);
-        }
+        },
+        isSubtype(type: Type, t: Type, permissive=false): boolean {
+            const info = reg.typeInfo(type);
+            if (!permissive && !info) { return false; }
+            if (typeIdEquals(type, t)) {
+                return permissive || typeParamsEqual(type, t);
+            }
+            return info?.isSubtype(t) ?? false;
+        },
     };
+    return reg;
 }
 
 export type TypeRegistry = ReturnType<typeof createTypeRegistry>;

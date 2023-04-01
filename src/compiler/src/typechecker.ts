@@ -1,6 +1,6 @@
-import { AbstractType, builtInType, Method, nullableType, ParamType, Type, typeEquals, TypeInfo } from "./typing.js";
+import { AbstractType, AbstractTypeInfo, builtInType, Method, nullableType, ParamType, Type, typeEquals, typeIdEquals, TypeInfo } from "./typing.js";
 import { DimExpr, Expr, FuncParameter, Parser, Span, Value } from "./parse.js";
-import { isGlobalBuiltIn, Sym, symEqual, symToString } from "./sym.js";
+import { isGlobalBuiltIn, Sym, symToString } from "./sym.js";
 import { BinaryOperator } from "./operator.js";
 import { createTypeRegistry } from "./typeregistry.js";
 import { BooleanType, CallableType, defineStandardTypes, NullType, NumberType, ObjectType, StringType, UnknownType } from "./def-std-types.js";
@@ -30,6 +30,7 @@ type TypedExpr =
 
 export type TypingError = { expr: Expr } & (
     { kind: "not-subtype", type: Type, of: Type } |
+    { kind: "not-callable", type: Type } |
     { kind: "unknown-member", sym: Sym, of: Type } |
     { kind: "unknown-function", sym: Sym } |
     { kind: "unknown-var", sym: Sym } |
@@ -104,11 +105,7 @@ export function createTypeChecker(parser: Parser, permissive: boolean) {
         if (permissive && typeEquals(sub, UnknownType)) {
             return;
         }
-        if (symEqual(sub.sym, type.sym) && (permissive || !sub.nullable)) {
-            return;
-        }
-        const t1 = reg.typeInfo(sub);
-        if (t1 && !t1.isSubtype(type)) {
+        if (!reg.isSubtype(sub, type, permissive)) {
             signalError({ expr, kind: "not-subtype", type: sub, of: type });
         }
     }
@@ -191,7 +188,7 @@ export function createTypeChecker(parser: Parser, permissive: boolean) {
     }
 
     function inferArrayStatement(expr: TypedExpr, args: TypedExpr[]): TypedExpr {
-        let info: TypeInfo|undefined = undefined;
+        let info: AbstractTypeInfo|undefined = undefined;
         let nullable = false;
         if (args.length === 0) {
             nullable = true;
@@ -243,7 +240,9 @@ export function createTypeChecker(parser: Parser, permissive: boolean) {
         }
         const returnType = tCallee.type.params.at(-1) ?? UnknownType;
         const tExpr: TypedExpr = { type: returnType, span: expr.span, kind: "call", expr: tCallee, args: tArgs };
-        assertSubtype(tExpr, tCallee.type, CallableType);
+        if (!typeIdEquals(tCallee.type, CallableType)) {
+            signalError({ expr: tCallee, kind: "not-callable", type: tCallee.type });
+        }
         return tExpr;
     }
 
@@ -293,7 +292,12 @@ export function createTypeChecker(parser: Parser, permissive: boolean) {
             let member: Method|undefined;
             while (!member && currObjInfo) {
                 member = currObjInfo.methods.get(method.name);
-                currObjInfo = currObjInfo.parent;
+                if (currObjInfo.parent) {
+                    const args = resolveMethodParams(currObjInfo.args, currObjInfo.parent?.params, 0);
+                    currObjInfo = { ...currObjInfo.parent, args };
+                } else {
+                    break;
+                }
             }
             if (typeof member !== "undefined") {
                 type = builtInType("callable", false, [
