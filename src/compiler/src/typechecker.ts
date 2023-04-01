@@ -3,7 +3,7 @@ import { DimExpr, Expr, FuncParameter, Parser, Span, Value } from "./parse.js";
 import { isGlobalBuiltIn, Sym, symToString } from "./sym.js";
 import { BinaryOperator } from "./operator.js";
 import { createTypeRegistry } from "./typeregistry.js";
-import { BooleanType, CallableType, defineStandardTypes, NullType, NumberType, ObjectType, StringType, UnknownType } from "./def-std-types.js";
+import { BooleanType, CallableType, defineStandardTypes, NullType, NumberNotNull, NumberType, ObjectType, StringType, UnknownType } from "./def-std-types.js";
 import { defineStandardFunctions } from "./def-std-func.js";
 import { ArrayType } from "./def-std-types.js";
 import { defineWebAPI } from "./def-web-api.js";
@@ -31,6 +31,7 @@ type TypedExpr =
 export type TypingError = { expr: Expr } & (
     { kind: "not-subtype", type: Type, of: Type } |
     { kind: "not-callable", type: Type } |
+    { kind: "not-iterable", type: Type } |
     { kind: "unknown-member", sym: Sym, of: Type } |
     { kind: "unknown-function", sym: Sym } |
     { kind: "unknown-var", sym: Sym } |
@@ -187,6 +188,36 @@ export function createTypeChecker(parser: Parser, permissive: boolean) {
         return { type: args.at(-1)?.type ?? UnknownType, span: expr.span, kind: "call", expr, args };
     }
 
+    function inferForeachStatement(expr: TypedExpr, args: Expr[]): TypedExpr {
+        if (args.length !== 2) {
+            signalError({ expr, kind: "wrong-arity", name: "ForEach", expected: [2], got: args.length });
+            return { type: NullType, span: expr.span, kind: "call", expr, args: args.map((arg, i) => inferType(arg, expr.type.params[i])) };
+        }
+        const iterable = inferType(args[0]);
+        const keySym: Sym = { kind: "%", name: "key" };
+        const valSym: Sym = { kind: "%", name: "val" };
+        const oldKeyType = reg.symType(keySym) ?? UnknownType;
+        const oldValType = reg.symType(valSym) ?? UnknownType;
+        if (isGlobalBuiltIn(iterable.type.sym) && iterable.type.sym.name === "array") {
+            console.log("infering array foreach");
+            reg.setSymType(keySym, NumberNotNull);
+            reg.setSymType(valSym, iterable.type.params[0]);
+        } else if (
+            isGlobalBuiltIn(iterable.type.sym) && 
+            (iterable.type.sym.name === "dictionary" || iterable.type.sym.name === "cache")
+        ) {
+            console.log("infering dict foreach");
+            reg.setSymType(keySym, iterable.type.params[0]);
+            reg.setSymType(valSym, iterable.type.params[1]);
+        } else {
+            signalError({ expr, kind: "not-iterable", type: iterable.type });
+        }
+        const typedArgs = args.map((arg, i) => inferType(arg, expr.type.params[i]))
+        reg.setSymType(keySym, oldKeyType);
+        reg.setSymType(valSym, oldValType);
+        return { type: NullType, span: expr.span, kind: "call", expr, args: typedArgs };
+    }
+
     function inferArrayStatement(expr: TypedExpr, args: TypedExpr[]): TypedExpr {
         let info: AbstractTypeInfo|undefined = undefined;
         let nullable = false;
@@ -214,8 +245,11 @@ export function createTypeChecker(parser: Parser, permissive: boolean) {
 
     function inferCallExpr(expr: Expr, callee: Expr, args: Expr[]): TypedExpr {
         const tCallee = inferType(callee);
-        const tArgs = args.map((arg, i) => inferType(arg, tCallee.type.params[i]));
         if (callee.kind === "var" && isGlobalBuiltIn(callee.sym)) {
+            if (callee.sym.name === "foreach") {
+                return inferForeachStatement(tCallee, args);
+            }
+            const tArgs = args.map((arg, i) => inferType(arg, tCallee.type.params[i]));
             switch (callee.sym.name) {
                 case "if":
                     return inferIfStatement(tCallee, tArgs);
@@ -227,19 +261,23 @@ export function createTypeChecker(parser: Parser, permissive: boolean) {
                     break;
             }
         }
+        const tArgs = args.map((arg, i) => inferType(arg, tCallee.type.params[i]));
         let name = "";
         if (tCallee.kind === "var") {
             name = symToString(tCallee.sym);
         }
+        const returnType = tCallee.type.params.at(-1) ?? UnknownType;
+        const tExpr: TypedExpr = { type: returnType, span: expr.span, kind: "call", expr: tCallee, args: tArgs };
         if (tCallee.type.params.length > 0 && args.length !== tCallee.type.params.length - 1) {
             signalError({ expr, kind: "wrong-arity", name, expected: [tCallee.type.params.length - 1], got: args.length });
         } else {
             for (const [i, arg] of tArgs.entries()) {
-                assertSubtype(expr, arg.type, tCallee.type.params[i]);
+                if (!reg.isSubtype(arg.type, tCallee.type.params[i])) {
+                    console.log("not subtype", arg, arg.type, tCallee.type.params[i]);
+                }
+                assertSubtype(tExpr, arg.type, tCallee.type.params[i]);
             }
         }
-        const returnType = tCallee.type.params.at(-1) ?? UnknownType;
-        const tExpr: TypedExpr = { type: returnType, span: expr.span, kind: "call", expr: tCallee, args: tArgs };
         if (!typeIdEquals(tCallee.type, CallableType)) {
             signalError({ expr: tCallee, kind: "not-callable", type: tCallee.type });
         }

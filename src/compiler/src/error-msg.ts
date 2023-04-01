@@ -53,6 +53,8 @@ function typingErrorKindToString(err: TypingError): string {
             return `expected type ${typeToString(err.of)} but got ${typeToString(err.type)}`;
         case "not-callable":
             return `expression of type ${typeToString(err.type)} cannot be called`;
+        case "not-iterable":
+            return `expression of type ${typeToString(err.type)} is not iterable`;
         case "unknown-function":
             return `there is no function called ${symToString(err.sym)}`;
         case "unknown-member":
