@@ -37,10 +37,10 @@ export type TypingError = { expr: Expr } & (
     { kind: "already-declared", sym: Sym });
 
 function concretizeType(concreteTypes: Type[], type: AbstractType): Type {
-    return { sym: type.sym, nullable: type.nullable, params: resolveMethodParams(concreteTypes, type.params) }
+    return { sym: type.sym, nullable: type.nullable, params: resolveMethodParams(concreteTypes, type.params, 0) }
 }
 
-function resolveMethodParams(concreteTypes: Type[], methodParams: ParamType[]): Type[] {
+function resolveMethodParams(concreteTypes: Type[], methodParams: ParamType[], argsLength: number): Type[] {
     const result: Type[] = [];
     for (const methodParam of methodParams) {
         if (typeof methodParam === "number") {
@@ -50,9 +50,10 @@ function resolveMethodParams(concreteTypes: Type[], methodParams: ParamType[]): 
             const params = concreteTypes.slice(start, end);
             result.push(...params);
         } else if ("vararg" in methodParam) {
-            const varArgLength = concreteTypes.length - (methodParams.length - 1);
+            const varArgLength = argsLength - (methodParams.length - 1);
+            const [varargType] = resolveMethodParams(concreteTypes, [methodParam.vararg], 0);
             for (var i = 0; i < varArgLength; i++) {
-                result.push(concretizeType(concreteTypes, methodParam.vararg));
+                result.push(concretizeType(concreteTypes, varargType));
             }
         } else if ("sym" in methodParam) {
             result.push(concretizeType(concreteTypes, methodParam));
@@ -143,7 +144,26 @@ export function createTypeChecker(parser: Parser, permissive: boolean) {
     }
 
     function inferNewExpr(expr: Expr, cstr: Type, args: Expr[]): TypedExpr {
-        return { type: cstr, span: expr.span, kind: "new", cstr, args: args.map(arg => inferType(arg)) };
+        const info = reg.typeInfo(cstr);
+        const tArgs = args.map(arg => inferType(arg));
+        if (!info && !permissive) {
+            signalError({ expr: expr, kind: "unknown-function", sym: cstr.sym });
+        } else if (info) {
+            const methodNew = info.methods.get("new");
+            if (!methodNew) {
+                signalError({ expr: expr, kind: "unknown-function", sym: cstr.sym });
+            } else {
+                const cstrParams = resolveMethodParams(cstr.params, methodNew.params, args.length);
+                if (args.length !== cstrParams.length) {
+                    signalError({ expr, kind: "wrong-arity", name: cstr.sym.name, expected: [cstrParams.length], got: args.length });
+                } else {
+                    for (const [i, arg] of tArgs.entries()) {
+                        assertSubtype(expr, arg.type, cstrParams[i]);
+                    }
+                }
+            }
+        }
+        return { type: cstr, span: expr.span, kind: "new", cstr, args: tArgs };
     }
 
     function inferIfStatement(expr: TypedExpr, args: TypedExpr[]): TypedExpr {
@@ -277,7 +297,7 @@ export function createTypeChecker(parser: Parser, permissive: boolean) {
             }
             if (typeof member !== "undefined") {
                 type = builtInType("callable", false, [
-                    ...resolveMethodParams(tObject.type.params, member.params), 
+                    ...resolveMethodParams(tObject.type.params, member.params, member.params.length), 
                     lookupType(tObject.type, member.ret)]);
             } else {
                 signalError({ expr, kind: "unknown-member", sym: method, of: tObject.type });

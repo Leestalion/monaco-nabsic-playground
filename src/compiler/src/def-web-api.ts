@@ -33,6 +33,7 @@ export function defineWebAPI(reg: TypeRegistry) {
         { name: "Code", params: [], ret: StringNotNull },
     ]));
     reg.registerTypeInfo(createTypeInfo("Color", ColorType, ObjectTypeInfo, [
+        { name: "New", params: [NumberNotNull, NumberNotNull, NumberNotNull], ret: NullType },
         { name: "R", params: [], ret: NumberNotNull },
         { name: "G", params: [], ret: NumberNotNull },
         { name: "B", params: [], ret: NumberNotNull },
@@ -50,6 +51,7 @@ export function defineWebAPI(reg: TypeRegistry) {
         { name: "SetText", params: [StringType], ret: ElementType },
     ]));
     reg.registerTypeInfo(createTypeInfo("Canvas", CanvasType, ElementTypeInfo, [
+        { name: "New", params: [ElementType], ret: NullType },
         { name: "Resize", params: [NumberNotNull, NumberNotNull], ret: CanvasType },
         { name: "Clear", params: [ColorType], ret: CanvasType },
         { name: "SetDrawColor", params: [ColorType], ret: CanvasType },

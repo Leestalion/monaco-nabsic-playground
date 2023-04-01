@@ -32,6 +32,7 @@ export function defineStandardTypes(reg: TypeRegistry) {
         { name: "Value", params: [], ret: 1 },
     ]));
     const DictTypeInfo = reg.registerTypeInfo(createTypeInfo("Dictionary", DictType, ObjectTypeInfo, [
+        { name: "New", params: [], ret: NullType },
         { name: "Count", params: [], ret: NumberNotNull },
         { name: "Get", params: [0], ret: 1 },
         { name: "Set", params: [0, 1], ret: NullType },
@@ -78,6 +79,7 @@ export function defineStandardTypes(reg: TypeRegistry) {
         { name: "GetValue", params: [], ret: StringType },
     ]));
     reg.registerTypeInfo(createTypeInfo("Array", ArrayType, ObjectTypeInfo, [
+        { name: "New", params: [{ vararg: 0 }], ret: NullType },
         { name: "Size", params: [], ret: NumberNotNull },
         { name: "Get", params: [NumberType], ret: 0 },
         { name: "Set", params: [NumberType, 0], ret: NullType },
