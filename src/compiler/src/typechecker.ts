@@ -192,7 +192,7 @@ export function createTypeChecker(parser: Parser, permissive: boolean) {
         const inputType = args[0].type;
         const retType = args.at(-1)?.type ?? UnknownType;
         for (let i = 1; i < args.length; i ++) {
-            if (i % 0 === 0) {
+            if (i % 2 === 0 || i === args.length - 1) {
                 assertSubtype(expr, args[i].type, retType);
             } else {
                 assertSubtype(expr, args[i].type, inputType);
@@ -340,7 +340,6 @@ export function createTypeChecker(parser: Parser, permissive: boolean) {
     }
 
     function inferAccessExpr(expr: Expr, object: Expr, method: Sym, args: Expr[]): TypedExpr {
-        console.log("infer access", method.name);
         const tObject = inferType(object);
         const objTypeInfo = reg.typeInfo(nullableType(tObject.type));
         let type = UnknownType;
