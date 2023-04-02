@@ -30,7 +30,7 @@ type ExprMinusSpan =
     { kind: ":=", left: Expr, right: Expr } |
     { kind: "op", op: BinaryOperator, left: Expr, right: Expr } |
     { kind: "list", expressions: Expr[] } |
-    { kind: "access", object: Expr, method: Sym } |
+    { kind: "access", object: Expr, method: Sym, args: Expr[] } |
     { kind: "lambda", params: FuncParameter[], body: Expr }
 
 export type Expr = { span: Span } & ExprMinusSpan;
@@ -443,7 +443,12 @@ export function createParser(tokens: TokenStream, stopOnFirstError: boolean, dec
                 if (member.kind !== "sym") {
                     signalError({ reason: "expected-but-found", expected: ["."], found: member })
                 }
-                expr = exprWithSpan({ kind: "access", object: expr, method: member.value });
+                const nextTok = expectNonNull(tryPeekToken(), "method call");
+                if (nextTok.kind !== "(") {
+                    signalError({ reason: "expected-but-found", expected: ["("], found: nextTok });
+                }
+                const args = parseSequenceList(")");
+                expr = exprWithSpan({ kind: "access", object: expr, method: member.value, args });
             } else if (nextTok.kind === ":=") {
                 tryNextToken();
                 expr = exprWithSpan({ kind: ":=", left: expr, right: assertExpr(parseNextExpr(0), "right part of :=") });

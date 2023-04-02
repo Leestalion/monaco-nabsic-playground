@@ -25,7 +25,7 @@ type TypedExpr =
     { kind: ":=", left: TypedExpr, right: TypedExpr } |
     { kind: "op", op: BinaryOperator, left: TypedExpr, right: TypedExpr } |
     { kind: "list", expressions: TypedExpr[] } |
-    { kind: "access", object: TypedExpr, method: Sym } |
+    { kind: "access", object: TypedExpr, method: Sym, args: TypedExpr[] } |
     { kind: "lambda", params: FuncParameter[], body: TypedExpr });
 
 export type TypingError = { expr: Expr } & (
@@ -255,42 +255,51 @@ export function createTypeChecker(parser: Parser, permissive: boolean) {
         return { type: { sym: ArrayType.sym, nullable: true, params: [type] }, span: expr.span, kind: "call", expr, args };
     }
 
+    function inferArgs(expr: Expr, name: string, typeParams: Type[], args: Expr[]): { args: TypedExpr[], returnType: Type } {
+        const tArgs = args.map((arg, i) => inferType(arg, typeParams[i]));
+        const returnType = typeParams.at(-1) ?? UnknownType;
+        if (typeParams.length > 0 && args.length !== typeParams.length - 1) {
+            signalError({ expr, kind: "wrong-arity", name, expected: [typeParams.length - 1], got: args.length });
+        } else {
+            for (const [i, arg] of tArgs.entries()) {
+                assertSubtype(expr, arg.type, typeParams[i]);
+            }
+        }
+        return { args: tArgs, returnType };
+    }
+
     function inferCallExpr(expr: Expr, callee: Expr, args: Expr[]): TypedExpr {
         const tCallee = inferType(callee);
+        if (!typeIdEquals(tCallee.type, CallableType)) {
+            signalError({ expr: tCallee, kind: "not-callable", type: tCallee.type });
+        }
         if (callee.kind === "var" && isGlobalBuiltIn(callee.sym)) {
             if (callee.sym.name === "foreach") {
                 return inferForeachStatement(tCallee, args);
             }
-            const tArgs = args.map((arg, i) => inferType(arg, tCallee.type.params[i]));
             switch (callee.sym.name) {
-                case "if":
+                case "if": {
+                    const tArgs = args.map((arg, i) => inferType(arg, tCallee.type.params[i]));
                     return inferIfStatement(tCallee, tArgs);
-                case "case":
+                }
+                case "case": {
+                    const tArgs = args.map((arg, i) => inferType(arg, tCallee.type.params[i]));
                     return inferCaseStatement(tCallee, tArgs);
-                case "array":
+                }
+                case "array": {
+                    const tArgs = args.map((arg, i) => inferType(arg, tCallee.type.params[i]));
                     return inferArrayStatement(tCallee, tArgs);
+                }
                 default:
                     break;
             }
         }
-        const tArgs = args.map((arg, i) => inferType(arg, tCallee.type.params[i]));
         let name = "";
         if (tCallee.kind === "var") {
             name = symToString(tCallee.sym);
         }
-        const returnType = tCallee.type.params.at(-1) ?? UnknownType;
-        const tExpr: TypedExpr = { type: returnType, span: expr.span, kind: "call", expr: tCallee, args: tArgs };
-        if (tCallee.type.params.length > 0 && args.length !== tCallee.type.params.length - 1) {
-            signalError({ expr, kind: "wrong-arity", name, expected: [tCallee.type.params.length - 1], got: args.length });
-        } else {
-            for (const [i, arg] of tArgs.entries()) {
-                assertSubtype(tExpr, arg.type, tCallee.type.params[i]);
-            }
-        }
-        if (!typeIdEquals(tCallee.type, CallableType)) {
-            signalError({ expr: tCallee, kind: "not-callable", type: tCallee.type });
-        }
-        return tExpr;
+        const callable = inferArgs(tCallee, name, tCallee.type.params, args);
+        return { type: callable.returnType, span: expr.span, kind: "call", expr: tCallee, args: callable.args };
     }
 
     function inferAssignmentExpr(expr: Expr, left: Expr, right: Expr): TypedExpr {
@@ -330,10 +339,12 @@ export function createTypeChecker(parser: Parser, permissive: boolean) {
         return { type, span: expr.span, kind: "op", op, left: tLeft, right: tRight };
     }
 
-    function inferAccessExpr(expr: Expr, object: Expr, method: Sym): TypedExpr {
+    function inferAccessExpr(expr: Expr, object: Expr, method: Sym, args: Expr[]): TypedExpr {
+        console.log("infer access", method.name);
         const tObject = inferType(object);
         const objTypeInfo = reg.typeInfo(nullableType(tObject.type));
         let type = UnknownType;
+        let tArgs: TypedExpr[];
         if (objTypeInfo && !method.path) {
             let currObjInfo: TypeInfo|undefined = objTypeInfo;
             let member: Method|undefined;
@@ -347,14 +358,18 @@ export function createTypeChecker(parser: Parser, permissive: boolean) {
                 }
             }
             if (typeof member !== "undefined") {
-                type = builtInType("callable", false, [
-                    ...resolveMethodParams(tObject.type.params, member.params, member.params.length), 
-                    lookupType(tObject.type, member.ret)]);
+                const typeParams = [
+                    ...resolveMethodParams(tObject.type.params, member.params, args.length), 
+                    lookupType(tObject.type, member.ret)];
+                const callable = inferArgs(expr, `${method.name}`, typeParams, args);
+                type = callable.returnType;
+                tArgs = callable.args;
             } else {
                 signalError({ expr, kind: "unknown-member", sym: method, of: tObject.type });
             }
         }
-        return { type, span: expr.span, kind: "access", object: tObject, method };
+        tArgs ??= args.map(arg => ({ type: UnknownType, ...arg } as TypedExpr));
+        return { type, span: expr.span, kind: "access", object: tObject, method, args: tArgs };
     }
 
     function inferLambdaExpr(expr: Expr, params: FuncParameter[], body: Expr, targetType: Type): TypedExpr {
@@ -403,7 +418,7 @@ export function createTypeChecker(parser: Parser, permissive: boolean) {
             case "list":
                 break;
             case "access":
-                return inferAccessExpr(expr, expr.object, expr.method);
+                return inferAccessExpr(expr, expr.object, expr.method, expr.args);
             case "lambda":
                 return inferLambdaExpr(expr, expr.params, expr.body, targetType);
         }

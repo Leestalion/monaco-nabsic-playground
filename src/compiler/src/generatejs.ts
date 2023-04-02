@@ -188,12 +188,13 @@ function createJavaScriptGenerator(parser: Iterator<Expr>) {
         }
     }
     
-    function generateAccessExpr(expr: { kind: "access", object: Expr, method: Sym }): string {
-        return `$nab.get(${exprToJavaScript(expr.object)}, ${JSON.stringify(symToString(expr.method))})`;
+    function generateAccessExpr(expr: { kind: "access", object: Expr, method: Sym, args: Expr[] }): string {
+        const params = expr.args.map(exprToJavaScript).join(",");
+        return `$nab.call(${exprToJavaScript(expr.object)},${JSON.stringify(symToString(expr.method))},${params})`;
     }
     
     function generateLambdaExpr(expr: { kind: "lambda", params: FuncParameter[], body: Expr }): string {
-        return `$nab.lambda((${expr.params.map(p => p.name).join(",")}) => ${exprToJavaScript(expr.body)})`;
+        return `$nab.lambda((${expr.params.map(p => p.name).join(",")})=>${exprToJavaScript(expr.body)})`;
     }
 
     function exprToJavaScript(expr: Expr): string {

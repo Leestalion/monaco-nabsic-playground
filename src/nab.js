@@ -103,22 +103,22 @@
                 return "<Unknown>";
         }
     }
-    $nab.get = (obj, prop) => {
+    $nab.call = (obj, prop, ...args) => {
         switch (prop) {
             case "serializetojson":
                 if (obj.serializetojson) {
-                    return obj.serializetojson.bind(obj);
+                    return obj.serializetojson();
                 } else {
-                    return () => JSON.stringify(obj);
+                    return JSON.stringify(obj);
                 }
             case "gettypename":
                 if (obj.gettypename) {
-                    return obj.gettypename.bind(obj);
+                    return obj.gettypename();
                 } else {
-                    return () => $nab.getTypeName(obj);
+                    return $nab.getTypeName(obj);
                 }
             default:
-                return obj[prop].bind(obj);
+                return obj[prop](...args);
         }
     };
     $nab.BuiltIn = $nab.BuiltIn ?? {};
