@@ -91,7 +91,6 @@
         },
     });
     $nab.getTypeName = (obj) => {
-        console.log("obj", obj, typeof obj);
         switch (typeof obj) {
             case "number":
                 return "Number";
@@ -165,6 +164,33 @@
     
     $nab.BuiltIn.len = s => s.length;
     $nab.BuiltIn.stringisnullorempty = s => s == null || $nab.BuiltIn.len(s) === 0;
+
+    $nab.cast = (n, type) => n;
+
+    function jsObjectToNabsic(obj) {
+        switch (typeof obj) {
+            case "string":
+                return new $nab.BuiltIn.string(obj);
+            case "number":
+                return obj;
+            case "object": {
+                if (Array.isArray(obj)) {
+                    return $nab.BuiltIn.array(...obj.map(jsObjectToNabsic));
+                }
+                const dict = new $nab.BuiltIn.dictionary();
+                for (const prop of Object.getOwnPropertyNames(obj)) {
+                    dict.set(prop, jsObjectToNabsic(obj[prop]));
+                }
+                return dict;
+            }
+        }
+    }
+
+    $nab.deserializefromjson = (s, type) => {
+        const parsed = JSON.parse(s);
+        return jsObjectToNabsic(parsed);
+    }
+
     $nab.BuiltIn.array = class Array {
         constructor(...args) {
             this.pElements = args ?? [];
@@ -262,7 +288,7 @@
         }
 
         set(k, v) {
-            if (typeof k !== "number") {
+            if (typeof k !== "number" && typeof k !== "string") {
                 k = k.tostring();
             }
             this.#m.set(k, v);

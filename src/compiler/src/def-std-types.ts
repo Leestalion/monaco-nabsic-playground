@@ -33,6 +33,7 @@ export function defineStandardTypes(reg: TypeRegistry) {
     ]));
     const DictTypeInfo = reg.registerTypeInfo(createTypeInfo("Dictionary", DictType, ObjectTypeInfo, [ObjectType, ObjectType], [
         { name: "New", params: [], ret: NullType },
+        { name: "ToString", params: [], ret: StringNotNull },
         { name: "Count", params: [], ret: NumberNotNull },
         { name: "Get", params: [0], ret: 1 },
         { name: "Set", params: [0, 1], ret: NullType },

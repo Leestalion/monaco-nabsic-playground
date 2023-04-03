@@ -1,8 +1,10 @@
 import { BinaryOperator } from "./operator.js";
-import { DimExpr, Expr, FuncParameter, Value } from "./parse.js";
+import { ConversionOp, DimExpr, Expr, FuncParameter, Value } from "./parse.js";
 import { isGlobalBuiltIn, Sym, symToString } from "./sym.js";
 import { Type, isBuiltinType, typeIdToString } from "./typing.js";
 
+
+function unreachable(_: never): never { throw "unreachable"; }
 
 function createJavaScriptGenerator(parser: Iterator<Expr>) {
     const vars = new Set<string>();
@@ -187,6 +189,16 @@ function createJavaScriptGenerator(parser: Iterator<Expr>) {
             case "bitand": return `$nab.bitand(${left}, ${right})`;
         }
     }
+
+    function generateConversionExpr(op: ConversionOp, expr: Expr, type: Type): string {
+        const converted = exprToJavaScript(expr);
+        switch (op) {
+            case "cast":
+                return `$nab.cast(${converted}, ${JSON.stringify(type)})`;
+            case "deserializefromjson":
+                return `$nab.deserializefromjson(${converted}, ${JSON.stringify(type)})`;
+        }
+    }
     
     function generateAccessExpr(expr: { kind: "access", object: Expr, method: Sym, args: Expr[] }): string {
         const params = expr.args.map(exprToJavaScript).join(",");
@@ -202,9 +214,9 @@ function createJavaScriptGenerator(parser: Iterator<Expr>) {
             case "lit":
                 return generateLit(expr);
             case "not":
-                return `(!${exprToJavaScript(expr.expr)})`
+                return `(!${exprToJavaScript(expr.expr)})`;
             case "minus":
-             return `(-${exprToJavaScript(expr.expr)})`
+                return `(-${exprToJavaScript(expr.expr)})`;
             case "seq":
                 return `(${expr.exprs.map(exprToJavaScript).join(",")})`;
             case "dim":
@@ -216,23 +228,26 @@ function createJavaScriptGenerator(parser: Iterator<Expr>) {
             case "call":
                 return generateCallExpr(expr);
             case "select":
-                break;
+                return "";
             case "select2":
-                break;
+                return "";
             case "aggregate":
-                break;
+                return "";
             case ":=":
                 return generateAssignmentExpr(expr);
             case "op":
                 return generateOpExpr(expr);
+            case "conversion":
+                return generateConversionExpr(expr.op, expr.expr, expr.type);
             case "list":
-                break;
+                return "";
             case "access":
                 return generateAccessExpr(expr);
             case "lambda":
                 return generateLambdaExpr(expr);
+            default:
+                return unreachable(expr);
         }
-        return "";
     }
 
     const gen = {

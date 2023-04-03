@@ -1,5 +1,5 @@
 import { BinaryOperator, bindingPower, unaryOpsBp } from "./operator.js";
-import { Sym, SymKind } from "./sym.js";
+import { isGlobalBuiltIn, Sym, SymKind } from "./sym.js";
 import { Type } from "./typing.js";
 import { DateTime, Place, Token, TokenError, TokenResult, TokenStream } from "./tokenize.js";
 
@@ -14,6 +14,8 @@ export type Value =
 export type FuncParameter = {name: string, type: Type|undefined};
 
 export type DimExpr = { kind: "dim", sym: Sym, dimType?: Type, expr?: Expr }
+const ConversionOperations = ["cast", "deserializefromjson"] as const;
+export type ConversionOp = typeof ConversionOperations[number];
 
 type ExprMinusSpan =
     { kind: "lit", value: Value } |
@@ -29,6 +31,7 @@ type ExprMinusSpan =
     { kind: "var", sym: Sym } |
     { kind: ":=", left: Expr, right: Expr } |
     { kind: "op", op: BinaryOperator, left: Expr, right: Expr } |
+    { kind: "conversion", op: ConversionOp, expr: Expr, type: Type } |
     { kind: "list", expressions: Expr[] } |
     { kind: "access", object: Expr, method: Sym, args: Expr[] } |
     { kind: "lambda", params: FuncParameter[], body: Expr }
@@ -51,6 +54,10 @@ type ParseErrorMinusSpan =
     { reason: "bad-token", err: TokenError};
 
 export type ParseError = { span: Span } & ParseErrorMinusSpan;
+
+function isConversionSym(sym: Sym): boolean {
+    return isGlobalBuiltIn(sym) && (ConversionOperations as readonly string[]).includes(sym.name);
+}
 
 export function createParser(tokens: TokenStream, stopOnFirstError: boolean, declarationFile: boolean) {
     const errors: ParseError[] = [];
@@ -375,6 +382,25 @@ export function createParser(tokens: TokenStream, stopOnFirstError: boolean, dec
         }
     }
 
+    function parseConversion(expr: { span: Span, kind: "var", sym: Sym }): ExprMinusSpan {
+        const operation = expr.sym.name as ConversionOp;
+        const nextToken = expectNonNull(tryNextToken(), "parens after conversion");
+        if (nextToken.kind !== "(") {
+            signalError({ reason: "expected-but-found", expected: ["("], found: nextToken });
+        }
+        const converted = assertExpr(parseNextExpr(0), "expression to convert");
+        const comma = expectNonNull(tryNextToken(), "coma after conversion");
+        if (comma.kind !== ",") {
+            signalError({ reason: "expected-but-found", expected: [","], found: comma });
+        }
+        const type = expectNonNull(tryParseType(), "type to convert to");
+        const closingParens = expectNonNull(tryNextToken(), "parens after conversion");
+        if (closingParens.kind !== ")") {
+            signalError({ reason: "expected-but-found", expected: [")"], found: closingParens });
+        }
+        return { kind: "conversion", op: operation, expr: converted, type };
+    }
+
     function parseNextToken(previous: Expr|undefined, minBp: number): Expr|undefined {
         const tokres = tokens.peek();
         if (!tokres.done) {
@@ -430,7 +456,11 @@ export function createParser(tokens: TokenStream, stopOnFirstError: boolean, dec
                 expr = parseNextToken(expr, minBp);
                 break;
             } else if (nextTok.kind === "(") {
-                expr = exprWithSpan({ kind: "call", expr, args: parseSequenceList(")") });
+                if (expr.kind === "var" && isConversionSym(expr.sym)) {
+                    expr = exprWithSpan(parseConversion(expr));
+                } else {
+                    expr = exprWithSpan({ kind: "call", expr, args: parseSequenceList(")") });
+                }
             } else if (nextTok.kind === "[") {
                 expr = exprWithSpan({ kind: "select", expr, args: parseSequenceList("]") });
             } else if (nextTok.kind === "²[") {

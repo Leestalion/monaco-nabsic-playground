@@ -1,5 +1,5 @@
 import { AbstractType, AbstractTypeInfo, builtInType, Method, nullableType, ParamType, Type, typeEquals, typeIdEquals, TypeInfo } from "./typing.js";
-import { DimExpr, Expr, FuncParameter, Parser, Span, Value } from "./parse.js";
+import { ConversionOp, DimExpr, Expr, FuncParameter, Parser, Span, Value } from "./parse.js";
 import { isGlobalBuiltIn, Sym, symToString } from "./sym.js";
 import { BinaryOperator } from "./operator.js";
 import { createTypeRegistry } from "./typeregistry.js";
@@ -24,6 +24,7 @@ type TypedExpr =
     { kind: "var", sym: Sym } |
     { kind: ":=", left: TypedExpr, right: TypedExpr } |
     { kind: "op", op: BinaryOperator, left: TypedExpr, right: TypedExpr } |
+    { kind: "conversion", op: ConversionOp, expr: TypedExpr } |
     { kind: "list", expressions: TypedExpr[] } |
     { kind: "access", object: TypedExpr, method: Sym, args: TypedExpr[] } |
     { kind: "lambda", params: FuncParameter[], body: TypedExpr });
@@ -405,23 +406,26 @@ export function createTypeChecker(parser: Parser, permissive: boolean) {
             case "call":
                 return inferCallExpr(expr, expr.expr, expr.args);
             case "select":
-                break;
+                return { type: builtInType("unknown"), ...expr } as TypedExpr;
             case "select2":
-                break;
+                return { type: builtInType("unknown"), ...expr } as TypedExpr;
             case "aggregate":
-                break;
+                return { type: builtInType("unknown"), ...expr } as TypedExpr;
             case ":=":
                 return inferAssignmentExpr(expr, expr.left, expr.right);
             case "op":
                 return inferOpExpr(expr, expr.op, expr.left, expr.right);
+            case "conversion":
+                return { type: expr.type, span: expr.span, kind: "conversion", op: expr.op, expr: inferType(expr.expr) };
             case "list":
-                break;
+                return { type: builtInType("unknown"), ...expr } as TypedExpr;
             case "access":
                 return inferAccessExpr(expr, expr.object, expr.method, expr.args);
             case "lambda":
                 return inferLambdaExpr(expr, expr.params, expr.body, targetType);
+            default:
+                unreachable(expr);
         }
-        return { type: builtInType("unknown"), ...expr } as TypedExpr;
     }
 
     const checker = {
