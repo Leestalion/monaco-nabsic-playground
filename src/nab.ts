@@ -9,17 +9,16 @@ $nab.Context = $nab.Context ?? {};
 
 type NabsicBool = boolean | undefined;
 type NabsicNumber = number | undefined;
-type NabsicString = string;
 type NabsicLambda<Args extends unknown, R> = {
     invoke(...args: readonly Args[]): R;
 };
 type NabsicObject = {
     equals(obj:NabsicAny):boolean;
-    serializetojson():NabsicString;
-    gettypename(): NabsicString;
-    tojson(): NabsicString;
+    serializetojson():string;
+    gettypename(): string;
+    tojson(): string;
 };
-type NabsicAny = number | boolean | undefined | NabsicString | NabsicObject;
+type NabsicAny = number | boolean | undefined | string | NabsicObject;
 
 const BuiltinMethods = {
     object: {
@@ -55,15 +54,15 @@ const BuiltinMethods = {
         toupperinvariant(self: string) { return self.toUpperCase(); },
         tolower(self: string) { return self.toLowerCase(); },
         tolowerinvariant(self: string) { return self.toLowerCase(); },
-        contains(self: string, s: NabsicString) { return self.includes(s); },
-        startswith(self: string, s: NabsicString) { return self.startsWith(s); },
-        endswith(self: string, s: NabsicString) { return self.endsWith(s); },
+        contains(self: string, s: string) { return self.includes(s); },
+        startswith(self: string, s: string) { return self.startsWith(s); },
+        endswith(self: string, s: string) { return self.endsWith(s); },
         remove(self: string, i: number, n: number) {
             const start = self.substring(1, i-1);
             const end = self.substring(i + n);
             return start + end;
         },
-        insert(self: string, i: number, s: NabsicString) {
+        insert(self: string, i: number, s: string) {
             const start = self.substring(1, i);
             const end = self.substring(i + 1);
             return start + s + end;
@@ -74,9 +73,9 @@ const BuiltinMethods = {
         trimend(self: string) { return self.trimEnd(); },
         trim(self: string) { return self.trim(); },
         substring(self: string, i: number, n: number) { return self.substr(i-1, n); },
-        indexof(self: string, s: NabsicString, i: number) { return self.indexOf(s, i - 1); },
-        split(self: string, s: NabsicString) { return self.split(s); },
-        replace(self: string, a: NabsicString, b: NabsicString) { return self.replace(a, b); },
+        indexof(self: string, s: string, i: number) { return self.indexOf(s, i - 1); },
+        split(self: string, s: string) { return self.split(s); },
+        replace(self: string, a: string, b: string) { return self.replace(a, b); },
         serializetojson(self: NabsicAny) { return JSON.stringify(self); },
     }
 };
@@ -125,7 +124,7 @@ $nab.add = (a: NabsicNumber, b: NabsicNumber) => a == null ? undefined : b == nu
 $nab.sub = (a: NabsicNumber, b: NabsicNumber) => a == null ? undefined : b == null ? undefined : a - b;
 $nab.mul = (a: NabsicNumber, b: NabsicNumber) => a == null ? undefined : b == null ? undefined : a * b;
 $nab.div = (a: NabsicNumber, b: NabsicNumber) => a == null ? undefined : b == null ? undefined : a / b;
-$nab.cat = (s: NabsicString, o: NabsicAny) => s.toString() + $nab.call(o, "tostring");
+$nab.cat = (s: string, o: NabsicAny) => s.toString() + $nab.call(o, "tostring");
 $nab.def = (a: NabsicAny, b: () => NabsicAny) => a == null ? b() : a;
 $nab.for = (n: number, cb: (inc: number)=>void) => {
     for (let i = 1; i <= n; i++) {
@@ -200,7 +199,7 @@ $nab.BuiltIn.debugprint = (obj: NabsicAny) => {
         console.log(JSON.stringify(s));
     }
 };
-$nab.BuiltIn.error = (msg: NabsicString) => { throw msg };
+$nab.BuiltIn.error = (msg: string) => { throw msg };
 $nab.BuiltIn.abort = () => { throw $nab.abort };
 $nab.BuiltIn.serializetojson = (obj: NabsicAny) => {
     if (typeof obj === "object" && "tojson" in obj) {
@@ -224,23 +223,23 @@ $nab.BuiltIn.atan = (n: number) => Math.atan(n);
 $nab.BuiltIn.maxof = (...n: number[]) => Math.max(...n);
 $nab.BuiltIn.minof = (...n: number[]) => Math.min(...n);
 
-$nab.BuiltIn.len = (s: NabsicString) => s.length;
-$nab.BuiltIn.stringisnullorempty = (s: NabsicString|undefined) => s == null || $nab.BuiltIn.len(s) === 0;
+$nab.BuiltIn.len = (s: string) => s.length;
+$nab.BuiltIn.stringisnullorempty = (s: string|undefined) => s == null || $nab.BuiltIn.len(s) === 0;
 
 $nab.cast = (n: NabsicAny, type: Type) => n;
 
-function jsObjectToNabsic(obj: any): NabsicAny {
+function jsObjectToNabsic(obj: any, type: Type): NabsicAny {
     switch (typeof obj) {
         case "string":
         case "number":
             return obj;
         case "object": {
             if (Array.isArray(obj)) {
-                return $nab.BuiltIn.array(...obj.map(jsObjectToNabsic));
+                return $nab.BuiltIn.array(...obj.map(p => jsObjectToNabsic(p, type)));
             }
             const dict = new $nab.BuiltIn.dictionary();
             for (const prop of Object.getOwnPropertyNames(obj)) {
-                dict.set(prop, jsObjectToNabsic(obj[prop]));
+                dict.set(prop, jsObjectToNabsic(obj[prop], type));
             }
             return dict;
         }
@@ -249,9 +248,9 @@ function jsObjectToNabsic(obj: any): NabsicAny {
     }
 }
 
-$nab.deserializefromjson = (s: NabsicString, type: Type) => {
+$nab.deserializefromjson = (s: string, type: Type) => {
     const parsed = JSON.parse(s);
-    return jsObjectToNabsic(parsed);
+    return jsObjectToNabsic(parsed, type);
 }
 
 $nab.BuiltIn.array = class NabArray<T extends NabsicAny> {
@@ -313,7 +312,7 @@ $nab.BuiltIn.array = class NabArray<T extends NabsicAny> {
         return res;
     }
 
-    join(sep: NabsicString) {
+    join(sep: string) {
         return this.pElements.join(sep);
     }
 
@@ -432,7 +431,7 @@ $nab.BuiltIn.buffer = class Buffer {
     #value = ""
 
     gettypename() { return "Buffer"; }
-    write(s: NabsicString) {
+    write(s: string) {
         this.#value += s;
     }
 
@@ -470,7 +469,7 @@ class Listenable {
         this.pElement = e;
     }
 
-    on(event: NabsicString, lambda: NabsicLambda<NabEvent, void>) {
+    on(event: string, lambda: NabsicLambda<NabEvent, void>) {
         this.pElement.addEventListener(event, e => lambda.invoke(new NabEvent(e as any)));
         return this;
     }
@@ -497,7 +496,7 @@ class NabWindow extends Listenable {
 }
 
 $nab.Context.window = new NabWindow(window);
-$nab.BuiltIn.alert = (msg: NabsicString) => alert(msg);
+$nab.BuiltIn.alert = (msg: string) => alert(msg);
 $nab.BuiltIn.refreshpage = () => window.location.reload();
 
 class NabElement extends Listenable {
@@ -507,24 +506,24 @@ class NabElement extends Listenable {
 
     gettypename() { return "Element"; }
 
-    setstyle(property: NabsicString, value: NabsicString) {
+    setstyle(property: string, value: string) {
         (this.pElement.style as any)[property] = value;
         return this;
     }
 
-    settext(text: NabsicString) {
+    settext(text: string) {
         this.pElement.textContent = text;
         return this;
     }
 
-    createchild(tag: NabsicString) {
+    createchild(tag: string) {
         const element = document.createElement(tag);
         this.pElement.appendChild(element);
         return new NabElement(element);
     }
 }
 
-$nab.BuiltIn.query = (selector: NabsicString) => {
+$nab.BuiltIn.query = (selector: string) => {
     const res = new $nab.BuiltIn.array();
     document.querySelectorAll(selector).forEach((e) => {
         res.append(new NabElement(e as HTMLElement));
@@ -532,7 +531,7 @@ $nab.BuiltIn.query = (selector: NabsicString) => {
     return res;
 };
 
-$nab.BuiltIn.queryunique = (selector: NabsicString) => new NabElement(document.querySelector(selector)!);
+$nab.BuiltIn.queryunique = (selector: string) => new NabElement(document.querySelector(selector)!);
 
 /* Fun API for programming visual things */
 
