@@ -1,8 +1,9 @@
-import './style.css';
-import sanmpleCode from "./editor/samplecode.nab.txt";
-import { monaco } from './editor/customMonaco';
-import { completionProvider, langConfig, langDef, tokensProvider, wordSeparators } from './editor/nabsic';
-import { javascriptFromBasic } from './compiler/src/mod';
+import "./style.css";
+import { monaco } from "./editor/customMonaco";
+// @ts-ignore
+import sampleCode from "./editor/samplecode.nab";
+import { completionProvider, langConfig, langDef, tokensProvider, wordSeparators } from "./editor/nabsic";
+import { javascriptFromBasic } from "./compiler/src/mod";
 
 
 monaco.languages.register(langDef);
@@ -12,7 +13,7 @@ monaco.languages.registerCompletionItemProvider('nsharp', completionProvider);
 
 const urlParams = new URLSearchParams(window.location.search);
 
-const value = urlParams.get("code") ?? window.localStorage.getItem("saved-code") ?? sanmpleCode;
+const value = urlParams.get("code") ?? window.localStorage.getItem("saved-code") ?? sampleCode;
 
 const editor = monaco.editor.create(document.querySelector<HTMLDivElement>('#editor')!, {
     wordSeparators,
