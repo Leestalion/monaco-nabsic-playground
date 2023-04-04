@@ -22,7 +22,7 @@ function createJavaScriptGenerator(parser: Iterator<Expr>) {
             case "num":
                 return JSON.stringify(val.value);
             case "str":
-                return `new $nab.BuiltIn.string(${JSON.stringify(val.value)})`;
+                return `${JSON.stringify(val.value)}`;
             case "date":
                 if (val.value.time) {
                     return `new Date(${val.value.year}, ${val.value.month-1}, ${val.value.day}, ${val.value.time.hours}, ${val.value.time.minutes}, ${val.value.time.seconds})`;
@@ -147,7 +147,7 @@ function createJavaScriptGenerator(parser: Iterator<Expr>) {
                 case "catch": {
                     const tryBody = exprToJavaScript(expr.args[0]);
                     const exceptBody = exprToJavaScript(expr.args[1]);
-                    return `(() => { var $catch; try { $catch = ${tryBody}; } catch (__errmsg__) { if (__errmsg__ instanceof $nab.BuiltIn.string) { $catch = ${exceptBody}; } else { throw __errmsg__; } } return $catch; })()`;
+                    return `(() => { var $catch; try { $catch = ${tryBody}; } catch (__errmsg__) { if (typeof __errmsg__ === "string") { $catch = ${exceptBody}; } else { throw __errmsg__; } } return $catch; })()`;
                 }
                 case "array": {
                     if (typeof expr.type === "undefined") { break; }
