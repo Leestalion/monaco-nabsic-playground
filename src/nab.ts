@@ -50,14 +50,14 @@ const BuiltinMethods = {
     string: {
         gettypename(_self: string) { return "String"; },
         tostring(self: string) { return self; },
-        equals(self: string, s: NabsicAny) { return (typeof s === "string") && self === s.toString(); },
+        equals(self: string, s: NabsicAny) { return (typeof s === "string") && self === s; },
         toupper(self: string) { return self.toUpperCase(); },
         toupperinvariant(self: string) { return self.toUpperCase(); },
         tolower(self: string) { return self.toLowerCase(); },
         tolowerinvariant(self: string) { return self.toLowerCase(); },
-        contains(self: string, s: NabsicString) { return self.includes(s.toString()); },
-        startswith(self: string, s: NabsicString) { return self.startsWith(s.toString()); },
-        endswith(self: string, s: NabsicString) { return self.endsWith(s.toString()); },
+        contains(self: string, s: NabsicString) { return self.includes(s); },
+        startswith(self: string, s: NabsicString) { return self.startsWith(s); },
+        endswith(self: string, s: NabsicString) { return self.endsWith(s); },
         remove(self: string, i: number, n: number) {
             const start = self.substring(1, i-1);
             const end = self.substring(i + n);
@@ -74,9 +74,9 @@ const BuiltinMethods = {
         trimend(self: string) { return self.trimEnd(); },
         trim(self: string) { return self.trim(); },
         substring(self: string, i: number, n: number) { return self.substr(i-1, n); },
-        indexof(self: string, s: NabsicString, i: number) { return self.indexOf(s.toString(), i - 1); },
-        split(self: string, s: NabsicString) { return self.split(s.toString()); },
-        replace(self: string, a: NabsicString, b: NabsicString) { return self.replace(a.toString(), b.toString()); },
+        indexof(self: string, s: NabsicString, i: number) { return self.indexOf(s, i - 1); },
+        split(self: string, s: NabsicString) { return self.split(s); },
+        replace(self: string, a: NabsicString, b: NabsicString) { return self.replace(a, b); },
         serializetojson(self: NabsicAny) { return JSON.stringify(self); },
     }
 };
@@ -250,7 +250,7 @@ function jsObjectToNabsic(obj: any): NabsicAny {
 }
 
 $nab.deserializefromjson = (s: NabsicString, type: Type) => {
-    const parsed = JSON.parse(s.toString());
+    const parsed = JSON.parse(s);
     return jsObjectToNabsic(parsed);
 }
 
@@ -314,7 +314,7 @@ $nab.BuiltIn.array = class NabArray<T extends NabsicAny> {
     }
 
     join(sep: NabsicString) {
-        return this.pElements.join(sep.toString());
+        return this.pElements.join(sep);
     }
 
     tostring() {
@@ -471,7 +471,7 @@ class Listenable {
     }
 
     on(event: NabsicString, lambda: NabsicLambda<NabEvent, void>) {
-        this.pElement.addEventListener(event.toString(), e => lambda.invoke(new NabEvent(e as any)));
+        this.pElement.addEventListener(event, e => lambda.invoke(new NabEvent(e as any)));
         return this;
     }
 }
@@ -508,17 +508,17 @@ class NabElement extends Listenable {
     gettypename() { return "Element"; }
 
     setstyle(property: NabsicString, value: NabsicString) {
-        (this.pElement.style as any)[property.toString()] = value;
+        (this.pElement.style as any)[property] = value;
         return this;
     }
 
     settext(text: NabsicString) {
-        this.pElement.textContent = text.toString();
+        this.pElement.textContent = text;
         return this;
     }
 
     createchild(tag: NabsicString) {
-        const element = document.createElement(tag.toString());
+        const element = document.createElement(tag);
         this.pElement.appendChild(element);
         return new NabElement(element);
     }
@@ -526,13 +526,13 @@ class NabElement extends Listenable {
 
 $nab.BuiltIn.query = (selector: NabsicString) => {
     const res = new $nab.BuiltIn.array();
-    document.querySelectorAll(selector.toString()).forEach((e) => {
+    document.querySelectorAll(selector).forEach((e) => {
         res.append(new NabElement(e as HTMLElement));
     });
     return res;
 };
 
-$nab.BuiltIn.queryunique = (selector: NabsicString) => new NabElement(document.querySelector(selector.toString())!);
+$nab.BuiltIn.queryunique = (selector: NabsicString) => new NabElement(document.querySelector(selector)!);
 
 /* Fun API for programming visual things */
 
