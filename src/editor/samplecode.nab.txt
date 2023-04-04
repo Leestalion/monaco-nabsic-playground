@@ -1,0 +1,18 @@
+Dim factorial@ := (n@ Number+) => (
+    Dim fac@ := 1:
+    For(n@,
+        fac@ := fac@ * Inc%
+    ):
+    fac@
+):
+
+Dim range@ := New Array<Number+>():
+For(5,
+    range@.Append(Inc%)
+):
+
+Dim results@ := range@.Select((n@) => (factorial@.Invoke(n@))):
+
+ForEach(results@,
+    DebugPrint("factorial(" & Key% & ") -> " & Val%)
+)
