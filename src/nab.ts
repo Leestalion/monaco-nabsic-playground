@@ -1,4 +1,5 @@
-import type { Type } from "./compiler/src/typing";
+import { ArrayType, DictType, NumberType, StringType } from "./compiler/src/def-std-types";
+import { Type, typeIdEquals, typeToString } from "./compiler/src/typing";
 
 
 export const $nab: any = {};
@@ -80,6 +81,8 @@ const BuiltinMethods = {
     }
 };
 
+const typeParams = Symbol("typeParams");
+$nab.typeParams = typeParams;
 $nab.break = Symbol("break");
 $nab.continue = Symbol("continue");
 $nab.return = Symbol("return");
@@ -226,22 +229,68 @@ $nab.BuiltIn.minof = (...n: number[]) => Math.min(...n);
 $nab.BuiltIn.len = (s: string) => s.length;
 $nab.BuiltIn.stringisnullorempty = (s: string|undefined) => s == null || $nab.BuiltIn.len(s) === 0;
 
-$nab.cast = (n: NabsicAny, type: Type) => n;
+$nab.cast = (obj: NabsicAny, type: Type) => {
+    switch (typeof obj) {
+        case "string":
+            if (typeIdEquals(type, StringType)) {
+                return obj;
+            } else {
+                $nab.BuiltIn.error(`cannot cast a String value to ${typeToString(type)}`);
+            }
+        case "number":
+            if (typeIdEquals(type, NumberType)) {
+                return obj;
+            } else {
+                $nab.BuiltIn.error(`cannot cast a Number value to ${typeToString(type)}`);
+            }
+            return obj;
+        case "object": {
+            const objType = obj.gettypename().toLocaleLowerCase();
+            const castType = typeToString(type);
+            if (objType === castType) {
+                return obj;
+            } else {
+                $nab.BuiltIn.error(`cannot cast a ${objType} value to a ${castType}`);
+            }
+        }
+        default:
+            return undefined;
+    }
+}
 
 function jsObjectToNabsic(obj: any, type: Type): NabsicAny {
     switch (typeof obj) {
         case "string":
+            if (typeIdEquals(type, StringType)) {
+                return obj;
+            } else {
+                console.log("hi")
+                $nab.BuiltIn.error(`cannot deserialize a String value to ${typeToString(type)}`);
+            }
         case "number":
+            if (typeIdEquals(type, NumberType)) {
+                return obj;
+            } else {
+                $nab.BuiltIn.error(`cannot deserialize a Number value to ${typeToString(type)}`);
+            }
             return obj;
         case "object": {
             if (Array.isArray(obj)) {
-                return $nab.BuiltIn.array(...obj.map(p => jsObjectToNabsic(p, type)));
+                if (typeIdEquals(type, ArrayType)) {
+                    return new $nab.BuiltIn.array(...obj.map(p => jsObjectToNabsic(p, type.params[0])));
+                } else {
+                    $nab.BuiltIn.error(`cannot deserialize an Array value to ${typeToString(type)}`);
+                }
             }
-            const dict = new $nab.BuiltIn.dictionary();
-            for (const prop of Object.getOwnPropertyNames(obj)) {
-                dict.set(prop, jsObjectToNabsic(obj[prop], type));
+            if (typeIdEquals(type, DictType)) {
+                const dict = new $nab.BuiltIn.dictionary();
+                for (const prop of Object.getOwnPropertyNames(obj)) {
+                    dict.set(prop, jsObjectToNabsic(obj[prop], type));
+                }
+                return dict;
+            } else {
+                $nab.BuiltIn.error(`cannot deserialize an object value to ${typeToString(type)}`);
             }
-            return dict;
         }
         default:
             return undefined;
@@ -255,14 +304,14 @@ $nab.deserializefromjson = (s: string, type: Type) => {
 
 $nab.BuiltIn.array = class NabArray<T extends NabsicAny> {
     pElements: T[];
-    pTypes: string[];
+    [typeParams]: string[];
 
     constructor(...args: T[]) {
         this.pElements = args ?? [];
-        this.pTypes = ["Object"];
+        this[typeParams] = ["Object"];
     }
 
-    gettypename() { return `Array<${this.pTypes}>`; }
+    gettypename() { return `Array<${this[typeParams]}>`; }
 
     get(i: number) {
         return this.pElements[i - 1];
@@ -328,13 +377,13 @@ $nab.BuiltIn.array = class NabArray<T extends NabsicAny> {
 class KeyValuePair<K extends NabsicAny, V extends NabsicAny> {
     #key: K;
     #value: V;
-    pTypes: string[] = [];
+    [typeParams]: string[] = [];
 
     constructor(key: K, value: V) {
         this.#key = key;
         this.#value = value;
     }
-    gettypename() { return `KeyValuePair<${this.pTypes.join(", ")}>`; }
+    gettypename() { return `KeyValuePair<${this[typeParams].join(", ")}>`; }
     key() { return this.#key }
     value() { return this.#value }
 };
@@ -342,14 +391,14 @@ class KeyValuePair<K extends NabsicAny, V extends NabsicAny> {
 $nab.BuiltIn.keyvaluepair = KeyValuePair;
 
 $nab.BuiltIn.dictionary = class Dictionary<K extends NabsicAny, V extends NabsicAny> {
-    #m: Map<string|number, V>; pTypes: string[];
+    #m: Map<string|number, V>; [typeParams]: string[];
     constructor() {
         this.#m = new Map();
-        this.pTypes = [];
+        this[typeParams] = [];
         return this;
     }
 
-    gettypename() { return `Dictionary<${this.pTypes.join(", ")}>`; }
+    gettypename() { return `Dictionary<${this[typeParams].join(", ")}>`; }
 
     get(k: K) {
         if (typeof k === "number" || typeof k === "string") {
@@ -424,7 +473,7 @@ $nab.BuiltIn.dictionary = class Dictionary<K extends NabsicAny, V extends Nabsic
     }
 };
 $nab.BuiltIn.cache = class extends $nab.BuiltIn.dictionary {
-    gettypename() { return `Cache<${this.pTypes.join(", ")}>`; }
+    gettypename() { return `Cache<${super[typeParams].join(", ")}>`; }
 }
 
 $nab.BuiltIn.buffer = class Buffer {

@@ -89,7 +89,7 @@ function createJavaScriptGenerator(parser: Iterator<Expr>) {
         if (isBuiltinType(expr.cstr)) {
             if (expr.cstr.params.length > 0) {
                 const params = JSON.stringify(expr.cstr.params.map(t => typeIdToString(t)));
-                return `Object.assign(new $nab.BuiltIn[${typeStr}](${args}), {pTypes:${params}})`
+                return `Object.assign(new $nab.BuiltIn[${typeStr}](${args}), {[$nab.typeParams]:${params}})`
             }
             return `new $nab.BuiltIn[${typeStr}](${args})`
         } else {
@@ -152,7 +152,7 @@ function createJavaScriptGenerator(parser: Iterator<Expr>) {
                 case "array": {
                     if (typeof expr.type === "undefined") { break; }
                     const params = JSON.stringify(expr.type.params.map(t => typeIdToString(t)));
-                    return `Object.assign(new $nab.BuiltIn[${JSON.stringify(symToString(expr.expr.sym))}](${expr.args.map(exprToJavaScript).join(",")}), {pTypes:${params}})`;
+                    return `Object.assign(new $nab.BuiltIn[${JSON.stringify(symToString(expr.expr.sym))}](${expr.args.map(exprToJavaScript).join(",")}), {[$nab.typeParams]:${params}})`;
                 }
             }
             return `$nab.BuiltIn[${JSON.stringify(symToString(expr.expr.sym))}](${expr.args.map(exprToJavaScript).join(",")})`;

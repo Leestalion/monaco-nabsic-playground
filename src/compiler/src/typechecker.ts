@@ -1,4 +1,4 @@
-import { AbstractType, AbstractTypeInfo, builtInType, Method, nullableType, ParamType, Type, typeEquals, typeIdEquals, TypeInfo } from "./typing.js";
+import { AbstractType, AbstractTypeInfo, builtInType, isBuiltinType, Method, nullableType, ParamType, Type, typeEquals, typeIdEquals, TypeInfo } from "./typing.js";
 import { ConversionOp, DimExpr, Expr, FuncParameter, Parser, Span, Value } from "./parse.js";
 import { isGlobalBuiltIn, Sym, symToString } from "./sym.js";
 import { BinaryOperator } from "./operator.js";
@@ -340,6 +340,14 @@ export function createTypeChecker(parser: Parser, permissive: boolean) {
         return { type, span: expr.span, kind: "op", op, left: tLeft, right: tRight };
     }
 
+    function inferConversion(op: ConversionOp, expr: Expr, type: Type): TypedExpr {
+        const tExpr = inferType(expr);
+        if (op === "deserializefromjson") {
+            assertSubtype(tExpr, tExpr.type, StringType);
+        }
+        return { type, span: expr.span, kind: "conversion", op, expr: tExpr };
+    }
+
     function inferAccessExpr(expr: Expr, object: Expr, method: Sym, args: Expr[]): TypedExpr {
         const tObject = inferType(object);
         const objTypeInfo = reg.typeInfo(nullableType(tObject.type));
@@ -416,7 +424,7 @@ export function createTypeChecker(parser: Parser, permissive: boolean) {
             case "op":
                 return inferOpExpr(expr, expr.op, expr.left, expr.right);
             case "conversion":
-                return { type: expr.type, span: expr.span, kind: "conversion", op: expr.op, expr: inferType(expr.expr) };
+                return inferConversion(expr.op, expr.expr, expr.type);
             case "list":
                 return { type: builtInType("unknown"), ...expr } as TypedExpr;
             case "access":
