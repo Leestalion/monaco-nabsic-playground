@@ -1,4 +1,4 @@
-import { AbstractType, AbstractTypeInfo, builtInType, isBuiltinType, Method, nullableType, ParamType, Type, typeEquals, typeIdEquals, TypeInfo } from "./typing.js";
+import { AbstractType, AbstractTypeInfo, builtInType, Method, nullableType, ParamType, Type, typeEquals, typeIdEquals, TypeInfo } from "./typing.js";
 import { ConversionOp, DimExpr, Expr, FuncParameter, Parser, Span, Value } from "./parse.js";
 import { isGlobalBuiltIn, Sym, symToString } from "./sym.js";
 import { BinaryOperator } from "./operator.js";
